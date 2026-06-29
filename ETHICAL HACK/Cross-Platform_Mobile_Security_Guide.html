@@ -1,0 +1,1823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-Platform Mobile Security Masterclass: Android vs iOS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+            border-bottom: 5px solid #FFD700;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header p {
+            font-size: 1.3em;
+            opacity: 0.95;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            border-left: 6px solid #667eea;
+            padding-left: 30px;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            font-size: 2.2em;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .section h2::before {
+            content: "▶";
+            color: #FFD700;
+            font-size: 1.5em;
+        }
+        
+        .section h3 {
+            color: #764ba2;
+            font-size: 1.6em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .comparison-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .comparison-table td {
+            padding: 18px 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .comparison-table tr:nth-child(even) {
+            background: #f8f9ff;
+        }
+        
+        .comparison-table tr:hover {
+            background: #e8ebff;
+            transition: background 0.3s ease;
+        }
+        
+        .android-col {
+            background: rgba(76, 175, 80, 0.1);
+        }
+        
+        .ios-col {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        
+        .android-badge {
+            background: #4CAF50;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .ios-badge {
+            background: #000;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .attack-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+            border-left: 5px solid #667eea;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .attack-card h4 {
+            color: #667eea;
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+        
+        .attack-number {
+            background: #667eea;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            border-left: 4px solid #FFD700;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .code-block code {
+            color: #d4d4d4;
+        }
+        
+        .keyword { color: #569CD6; }
+        .string { color: #CE9178; }
+        .comment { color: #6A9955; }
+        .function { color: #DCDCAA; }
+        
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .pros, .cons {
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .pros {
+            background: rgba(76, 175, 80, 0.15);
+            border-left: 5px solid #4CAF50;
+        }
+        
+        .cons {
+            background: rgba(244, 67, 54, 0.15);
+            border-left: 5px solid #F44336;
+        }
+        
+        .pros h4, .cons h4 {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        
+        .pros h4 {
+            color: #2E7D32;
+        }
+        
+        .cons h4 {
+            color: #C62828;
+        }
+        
+        .pros ul, .cons ul {
+            list-style-position: inside;
+            padding-left: 0;
+        }
+        
+        .pros li, .cons li {
+            margin-bottom: 8px;
+            padding-left: 5px;
+        }
+        
+        .tool-box {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+        }
+        
+        .tool-box h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        
+        .tool-box p {
+            margin: 10px 0;
+            line-height: 1.8;
+        }
+        
+        .warning {
+            background: #FFF3CD;
+            border-left: 5px solid #FFC107;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .warning strong {
+            color: #856404;
+        }
+        
+        .success {
+            background: #D4EDDA;
+            border-left: 5px solid #28A745;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .success strong {
+            color: #155724;
+        }
+        
+        .toc {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 40px;
+            border-left: 6px solid #667eea;
+        }
+        
+        .toc h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            border: none;
+            padding: 0;
+        }
+        
+        .toc ul {
+            list-style: none;
+            columns: 2;
+            gap: 30px;
+        }
+        
+        .toc li {
+            margin-bottom: 12px;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .toc li::before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .toc a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .toc a:hover {
+            text-decoration: underline;
+            color: #764ba2;
+        }
+        
+        .architecture-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .arch-box {
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        
+        .arch-box h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            text-align: center;
+        }
+        
+        .arch-box ul {
+            list-style-position: inside;
+        }
+        
+        .arch-box li {
+            margin-bottom: 10px;
+            padding: 8px 10px;
+            background: white;
+            border-radius: 5px;
+            margin-left: 5px;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .platform-box {
+            border-radius: 10px;
+            padding: 20px;
+            background: white;
+            border: 2px solid;
+        }
+        
+        .android-box {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.05);
+        }
+        
+        .ios-box {
+            border-color: #000;
+            background: rgba(0, 0, 0, 0.05);
+        }
+        
+        .platform-box h5 {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        
+        .android-box h5 {
+            color: #2E7D32;
+        }
+        
+        .ios-box h5 {
+            color: #000;
+        }
+        
+        .footer {
+            background: #333;
+            color: white;
+            padding: 30px;
+            text-align: center;
+            margin-top: 50px;
+        }
+        
+        .stat-box {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .stat-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .stat-item .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .stat-item .label {
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+        
+        .highlight {
+            background: #FFD700;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        
+        .breadcrumb {
+            color: #999;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+        
+        .breadcrumb a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .comparison-grid, .architecture-grid, .pros-cons, .stat-box {
+                grid-template-columns: 1fr;
+            }
+            
+            .comparison-table {
+                font-size: 0.9em;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .section {
+                padding-left: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔐 Cross-Platform Mobile Security Masterclass</h1>
+            <p>Android vs iOS: Architecture, Attacks, and Defense Strategies</p>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Table of Contents -->
+            <div class="toc">
+                <h3>📑 Table of Contents</h3>
+                <ul>
+                    <li><a href="#overview">Mobile Security Overview</a></li>
+                    <li><a href="#architecture">Architecture Comparison</a></li>
+                    <li><a href="#attack-surface">Attack Surface Analysis</a></li>
+                    <li><a href="#android-attacks">30+ Android Attacks</a></li>
+                    <li><a href="#ios-attacks">30+ iOS Attacks</a></li>
+                    <li><a href="#tools">Tools & Repositories</a></li>
+                    <li><a href="#code-examples">Code Examples</a></li>
+                    <li><a href="#defense">Defense Strategies</a></li>
+                    <li><a href="#when-use">When to Use Which Approach</a></li>
+                </ul>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="stat-box">
+                <div class="stat-item">
+                    <div class="number">95%</div>
+                    <div class="label">Android Market Share Tanzania</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number">30+</div>
+                    <div class="label">Android Attacks Covered</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number">30+</div>
+                    <div class="label">iOS Attacks Covered</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number">50+</div>
+                    <div class="label">Tools & Repositories</div>
+                </div>
+            </div>
+            
+            <!-- Section: Overview -->
+            <div class="section" id="overview">
+                <h2>Mobile Security Overview</h2>
+                
+                <h3>Why Both Android and iOS Matter</h3>
+                <p>While Android dominates Tanzania (95%), understanding iOS is critical for:</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>International careers</strong> - iOS essential for US/EU jobs</li>
+                    <li><strong>Elite targets</strong> - Executives, diplomats use iPhones</li>
+                    <li><strong>Different attack vectors</strong> - iOS security is fundamentally different</li>
+                    <li><strong>Complete security professional</strong> - Master both = premium salary</li>
+                    <li><strong>Defense comprehensiveness</strong> - Protect against all threats</li>
+                </ul>
+                
+                <h3>Mobile Security Market Reality</h3>
+                <p><strong>Market Breakdown in Tanzania:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Android devices: 14M+ (95%)</li>
+                    <li>iOS devices: 700K+ (5%)</li>
+                    <li>Enterprise users: 80% Android, 20% iOS</li>
+                    <li>Government agencies: 70% Android, 30% iOS</li>
+                    <li>Banking sector: 85% Android, 15% iOS (but iOS users = high-value targets)</li>
+                </ul>
+            </div>
+            
+            <!-- Section: Architecture Comparison -->
+            <div class="section" id="architecture">
+                <h2>Architecture Comparison</h2>
+                
+                <h3>Android Architecture Stack</h3>
+                <div class="arch-box">
+                    <h4>🤖 Android (Linux-Based, Open)</h4>
+                    <ul>
+                        <li><strong>Layer 1 (Top):</strong> Apps (Java/Kotlin)</li>
+                        <li><strong>Layer 2:</strong> Android Framework (Java APIs)</li>
+                        <li><strong>Layer 3:</strong> Native Libraries (C/C++)</li>
+                        <li><strong>Layer 4:</strong> Android Runtime (ART)</li>
+                        <li><strong>Layer 5:</strong> Linux Kernel (2.6.x or newer)</li>
+                        <li><strong>Layer 6 (Bottom):</strong> Hardware (Drivers, Bootloader)</li>
+                    </ul>
+                </div>
+                
+                <h3>iOS Architecture Stack</h3>
+                <div class="arch-box">
+                    <h4>🍎 iOS (Unix-Based, Closed)</h4>
+                    <ul>
+                        <li><strong>Layer 1 (Top):</strong> Apps (Swift/Objective-C)</li>
+                        <li><strong>Layer 2:</strong> Cocoa Touch Framework (iOS APIs)</li>
+                        <li><strong>Layer 3:</strong> Core OS & Media Services</li>
+                        <li><strong>Layer 4:</strong> Darwin (Unix Kernel)</li>
+                        <li><strong>Layer 5:</strong> XNU Kernel (hybrid microkernel)</li>
+                        <li><strong>Layer 6 (Bottom):</strong> Secure Enclave (dedicated security chip)</li>
+                    </ul>
+                </div>
+                
+                <h3>Key Architecture Differences</h3>
+                <table class="comparison-table">
+                    <tr>
+                        <th style="width: 30%;">Aspect</th>
+                        <th style="width: 35%;">Android</th>
+                        <th style="width: 35%;">iOS</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Kernel Type</strong></td>
+                        <td class="android-col">Linux (monolithic)</td>
+                        <td class="ios-col">Darwin/XNU (hybrid microkernel)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Language</strong></td>
+                        <td class="android-col">Java/Kotlin + C/C++ (Native)</td>
+                        <td class="ios-col">Swift/Objective-C</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Open Source</strong></td>
+                        <td class="android-col">✅ Yes (AOSP)</td>
+                        <td class="ios-col">❌ No (Closed Source)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Customization</strong></td>
+                        <td class="android-col">Highly customizable</td>
+                        <td class="ios-col">Restricted, Apple controlled</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hardware Variety</strong></td>
+                        <td class="android-col">100+ manufacturers</td>
+                        <td class="ios-col">Apple only (iPhone)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Update Control</strong></td>
+                        <td class="android-col">Manufacturer dependent</td>
+                        <td class="ios-col">Apple centralized</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Root Access</strong></td>
+                        <td class="android-col">Possible (rooting)</td>
+                        <td class="ios-col">Possible (jailbreaking)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Security Model</strong></td>
+                        <td class="android-col">Sandbox + Permissions</td>
+                        <td class="ios-col">Sandbox + Code Signing + Secure Boot</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hardware Security</strong></td>
+                        <td class="android-col">Varies by manufacturer</td>
+                        <td class="ios-col">Secure Enclave (required)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Encryption</strong></td>
+                        <td class="android-col">Optional, device dependent</td>
+                        <td class="ios-col">Mandatory, hardware backed</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <!-- Section: Attack Surface -->
+            <div class="section" id="attack-surface">
+                <h2>Attack Surface Analysis</h2>
+                
+                <h3>Android Attack Surface</h3>
+                <p><strong>Why Android Has Larger Attack Surface:</strong></p>
+                
+                <div class="architecture-grid">
+                    <div class="arch-box">
+                        <h4>Entry Points (Many)</h4>
+                        <ul>
+                            <li>App installation sources (Play Store + sideloading)</li>
+                            <li>USB debugging</li>
+                            <li>Bootloader unlock</li>
+                            <li>Custom ROMs</li>
+                            <li>ADB (Android Debug Bridge)</li>
+                            <li>Multiple OEM implementations</li>
+                            <li>Manufacturer-specific apps</li>
+                            <li>Open file system</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="arch-box">
+                        <h4>Vulnerability Sources</h4>
+                        <ul>
+                            <li>100+ device manufacturers</li>
+                            <li>Outdated OS versions (Android 8, 9, 10)</li>
+                            <li>Delayed security patches</li>
+                            <li>Bloatware with vulnerabilities</li>
+                            <li>Custom modifications by OEMs</li>
+                            <li>Rooting tools/exploits</li>
+                            <li>Legacy app permissions</li>
+                            <li>Accessible shared storage</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h3>iOS Attack Surface</h3>
+                <p><strong>Why iOS Has Smaller (But Interesting) Attack Surface:</strong></p>
+                
+                <div class="architecture-grid">
+                    <div class="arch-box">
+                        <h4>Entry Points (Limited)</h4>
+                        <ul>
+                            <li>App Store only (restricted)</li>
+                            <li>Jailbreaking required for deeper access</li>
+                            <li>USB Restricted Mode</li>
+                            <li>WiFi sharing</li>
+                            <li>iCloud account</li>
+                            <li>Bluetooth connections</li>
+                            <li>NFC communication</li>
+                            <li>App-specific vulnerabilities</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="arch-box">
+                        <h4>Vulnerability Sources</h4>
+                        <ul>
+                            <li>Single manufacturer (Apple)</li>
+                            <li>Unified OS updates (all devices same version)</li>
+                            <li>Fewer zero-day exploits (harder to find)</li>
+                            <li>Jailbreak exploits (highly technical)</li>
+                            <li>App sandboxing bypass</li>
+                            <li>WebKit vulnerabilities</li>
+                            <li>Kernel vulnerabilities</li>
+                            <li>Secure Enclave bypass (rare)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h3>Attack Surface Comparison</h3>
+                <table class="comparison-table">
+                    <tr>
+                        <th>Attack Vector</th>
+                        <th>Android Risk</th>
+                        <th>iOS Risk</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Malware Installation</strong></td>
+                        <td class="android-col">⚠️ HIGH (sideloading)</td>
+                        <td class="ios-col">🟢 LOW (App Store curated)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Physical Access Exploitation</strong></td>
+                        <td class="android-col">⚠️ HIGH (USB debugging)</td>
+                        <td class="ios-col">🟡 MEDIUM (Secure Boot)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Root/Privilege Escalation</strong></td>
+                        <td class="android-col">⚠️ HIGH (many exploits)</td>
+                        <td class="ios-col">🟡 MEDIUM (rare exploits)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Data Extraction</strong></td>
+                        <td class="android-col">⚠️ HIGH (readable filesystem)</td>
+                        <td class="ios-col">🟡 MEDIUM (encryption required)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Network Attacks</strong></td>
+                        <td class="android-col">⚠️ HIGH (HTTP allowed)</td>
+                        <td class="ios-col">🟢 LOW (HTTPS enforced)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Supply Chain Attacks</strong></td>
+                        <td class="android-col">⚠️ HIGH (diverse OEMs)</td>
+                        <td class="ios-col">🟡 MEDIUM (Apple controlled)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Jailbreak/Rooting</strong></td>
+                        <td class="android-col">⚠️ HIGH (easy tools)</td>
+                        <td class="ios-col">🟡 MEDIUM (technical)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Firmware Modification</strong></td>
+                        <td class="android-col">⚠️ HIGH (bootloader unlock)</td>
+                        <td class="ios-col">❌ IMPOSSIBLE (Secure Boot)</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <!-- Section: Android Attacks -->
+            <div class="section" id="android-attacks">
+                <h2>30+ Android Attacks (Comprehensive)</h2>
+                <p>You already have detailed information on these 30 attacks from the previous guide. Here's a quick reference summary:</p>
+                
+                <h3>Quick Reference: Android Attacks 1-15</h3>
+                <table class="comparison-table">
+                    <tr>
+                        <th>Attack #</th>
+                        <th>Attack Name</th>
+                        <th>Difficulty</th>
+                        <th>Impact</th>
+                        <th>Tanzania Relevance</th>
+                    </tr>
+                    <tr>
+                        <td><span class="android-badge">1</span></td>
+                        <td>Man-in-the-Middle (MITM)</td>
+                        <td>🟡 MEDIUM</td>
+                        <td>⚠️ HIGH</td>
+                        <td>✅ HIGH (WiFi attacks)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="android-badge">2</span></td>
+                        <td>APK Decompilation</td>
+                        <td>🟢 LOW</td>
+                        <td>⚠️ HIGH</td>
+                        <td>✅ HIGH (find secrets)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="android-badge">3</span></td>
+                        <td>Malware & Ransomware</td>
+                        <td>🟡 MEDIUM</td>
+                        <td>❌ CRITICAL</td>
+                        <td>✅ HIGH (common threat)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="android-badge">4</span></td>
+                        <td>Privilege Escalation</td>
+                        <td>🔴 HIGH</td>
+                        <td>❌ CRITICAL</td>
+                        <td>✅ MEDIUM</td>
+                    </tr>
+                    <tr>
+                        <td><span class="android-badge">5</span></td>
+                        <td>Phishing Attacks</td>
+                        <td>🟢 LOW</td>
+                        <td>⚠️ HIGH</td>
+                        <td>✅ CRITICAL (smishing)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="android-badge">6</span></td>
+                        <td>Insecure Data Storage</td>
+                        <td>🟢 LOW</td>
+                        <td>⚠️ HIGH</td>
+                        <td>✅ HIGH (common flaw)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="android-badge">7</span></td>
+                        <td>Insecure Communication</td>
+                        <td>🟡 MEDIUM</td>
+                        <td>⚠️ HIGH</td>
+                        <td>✅ HIGH (unencrypted)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="android-badge">8</span></td>
+                        <td>Insecure Authentication</td>
+                        <td>🟡 MEDIUM</td>
+                        <td>⚠️ HIGH</td>
+                        <td>✅ HIGH (weak auth)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="android-badge">9</span></td>
+                        <td>Broken Cryptography</td>
+                        <td>🔴 HIGH</td>
+                        <td>⚠️ HIGH</td>
+                        <td>✅ MEDIUM</td>
+                    </tr>
+                    <tr>
+                        <td><span class="android-badge">10</span></td>
+                        <td>SQL Injection</td>
+                        <td>🟡 MEDIUM</td>
+                        <td>⚠️ HIGH</td>
+                        <td>✅ HIGH (database apps)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="android-badge">11</span></td>
+                        <td>Code Injection</td>
+                        <td>🟡 MEDIUM</td>
+                        <td>⚠️ HIGH</td>
+                        <td>✅ MEDIUM</td>
+                    </tr>
+                    <tr>
+                        <td><span class="android-badge">12</span></td>
+                        <td>Broken Access Control</td>
+                        <td>🟡 MEDIUM</td>
+                        <td>⚠️ HIGH</td>
+                        <td>✅ HIGH</td>
+                    </tr>
+                    <tr>
+                        <td><span class="android-badge">13</span></td>
+                        <td>Insecure Deserialization</td>
+                        <td>🔴 HIGH</td>
+                        <td>❌ CRITICAL</td>
+                        <td>🟡 MEDIUM</td>
+                    </tr>
+                    <tr>
+                        <td><span class="android-badge">14</span></td>
+                        <td>Unencrypted Backups</td>
+                        <td>🟡 MEDIUM</td>
+                        <td>⚠️ HIGH</td>
+                        <td>✅ HIGH (cloud)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="android-badge">15</span></td>
+                        <td>Clipboard Attacks</td>
+                        <td>🟢 LOW</td>
+                        <td>⚠️ HIGH</td>
+                        <td>✅ HIGH (passwords)</td>
+                    </tr>
+                </table>
+                
+                <h3>Android Attacks 16-30 (Quick Reference)</h3>
+                <p>Attacks 16-30 include: Accessibility Service Abuse, System Downgrade, Bootloader Attacks, Wiretapping, Fake Base Stations, Location Tracking, Bluetooth Attacks, NFC Attacks, USB Debugging, Smishing, Supply Chain Attacks, Zero-Days, Emulator Detection Bypass, Rooting Malware, and DDoS Botnets.</p>
+                <p><em>Refer to the advanced guide for detailed code and implementation details for these attacks.</em></p>
+            </div>
+            
+            <!-- Section: iOS Attacks -->
+            <div class="section" id="ios-attacks">
+                <h2>30+ iOS Attacks (Comprehensive Guide)</h2>
+                <p>iOS has fundamentally different attack vectors due to closed architecture. Here are 30+ major iOS attacks:</p>
+                
+                <h3>iOS Attacks 1-10: Foundation Layer</h3>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">1</span> Jailbreaking & Exploitation</h4>
+                    <p><strong>What it is:</strong> Removing iOS security restrictions through known kernel exploits.</p>
+                    <p><strong>Key exploits:</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li>checkra1n (A7-A11 devices, unpatchable)</li>
+                        <li>unc0ver (A12+ devices, patches vary)</li>
+                        <li>Chimera/Electra (older iOS versions)</li>
+                    </ul>
+                    <p><strong>Impact:</strong> Full system access, sandbox bypass, code execution</p>
+                    <p><strong>Difficulty:</strong> 🟡 MEDIUM (one-click tools available)</p>
+                    <p><strong>Defense:</strong> Keep iOS updated, don't jailbreak, monitor for signs</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">2</span> App Transport Security (ATS) Bypass</h4>
+                    <p><strong>What it is:</strong> Forcing app to use unencrypted HTTP instead of HTTPS.</p>
+                    <p><strong>How it works:</strong></p>
+                    <div class="code-block">
+<span class="comment">// Attacker modifies app's Info.plist to allow HTTP</span>
+&lt;key&gt;NSAppTransportSecurity&lt;/key&gt;
+&lt;dict&gt;
+    &lt;key&gt;NSAllowsArbitraryLoads&lt;/key&gt;
+    &lt;true/&gt;
+&lt;/dict&gt;
+
+<span class="comment">// Now app sends data unencrypted
+// Attacker intercepts via MITM</span>
+                    </div>
+                    <p><strong>Impact:</strong> MITM attacks, credential theft, data interception</p>
+                    <p><strong>Difficulty:</strong> 🟡 MEDIUM (requires jailbreak or app modification)</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">3</span> Keychain Extraction</h4>
+                    <p><strong>What it is:</strong> Stealing passwords and secrets from iOS Keychain storage.</p>
+                    <p><strong>Methods:</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li>Jailbreak + keychain dumper tools</li>
+                        <li>Physical access + USB Restricted Mode bypass</li>
+                        <li>Memory forensics (extract keychain from RAM)</li>
+                    </ul>
+                    <p><strong>Tools:</strong> keychain-dumper, iOS Forensic Toolkit</p>
+                    <p><strong>Impact:</strong> All stored passwords, API keys, tokens compromised</p>
+                    <p><strong>Difficulty:</strong> 🟡 MEDIUM</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">4</span> App Store Trojan Distribution</h4>
+                    <p><strong>What it is:</strong> Distributing malicious app through official App Store.</p>
+                    <p><strong>How it works:</strong></p>
+                    <ol style="margin-left: 20px;">
+                        <li>Create legitimate-looking app</li>
+                        <li>Hide malicious code (encrypted/downloaded)</li>
+                        <li>Submit to App Store (passes initial review)</li>
+                        <li>Activate malware after update</li>
+                        <li>Affects 1000s of users</li>
+                    </ol>
+                    <p><strong>Real example:</strong> XcodeGhost (500M+ downloads infected)</p>
+                    <p><strong>Impact:</strong> Hundreds of thousands infected</p>
+                    <p><strong>Difficulty:</strong> 🔴 HIGH (requires fooling Apple review)</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">5</span> WebKit Exploitation</h4>
+                    <p><strong>What it is:</strong> Exploiting Safari/WebView vulnerabilities for RCE.</p>
+                    <p><strong>Attack chain:</strong></p>
+                    <ol style="margin-left: 20px;">
+                        <li>User visits malicious website</li>
+                        <li>WebKit vulnerability exploited</li>
+                        <li>Attacker gains code execution</li>
+                        <li>Sandbox potentially bypassed</li>
+                        <li>System access achieved</li>
+                    </ol>
+                    <p><strong>Impact:</strong> Full device compromise</p>
+                    <p><strong>Difficulty:</strong> 🔴 VERY HIGH (requires 0-day)</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">6</span> iCloud Account Compromise</h4>
+                    <p><strong>What it is:</strong> Gaining unauthorized access to iCloud account.</p>
+                    <p><strong>Attack vectors:</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li>Phishing credentials</li>
+                        <li>Brute force weak passwords</li>
+                        <li>SIM swap to bypass 2FA</li>
+                        <li>Unauthorized access to Apple ID</li>
+                    </ul>
+                    <p><strong>Access gained:</strong> Photos, messages, location, backups, Find My iPhone</p>
+                    <p><strong>Impact:</strong> Complete privacy breach</p>
+                    <p><strong>Difficulty:</strong> 🟡 MEDIUM</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">7</span> Secure Enclave Bypass</h4>
+                    <p><strong>What it is:</strong> Bypassing hardware security chip for authentication.</p>
+                    <p><strong>Targets:</strong> Face ID/Touch ID verification</p>
+                    <p><strong>Methods:</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li>Physical attacks (expensive, $100K+)</li>
+                        <li>Firmware modification (rare)</li>
+                        <li>Exploit unpatched hardware</li>
+                    </ul>
+                    <p><strong>Impact:</strong> Biometric security bypassed</p>
+                    <p><strong>Difficulty:</strong> ❌ EXTREMELY HIGH</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">8</span> App Sandbox Escape</h4>
+                    <p><strong>What it is:</strong> Breaking out of app's sandbox to access system files.</p>
+                    <p><strong>Requires:</strong> 0-day kernel exploit</p>
+                    <p><strong>Example:</strong> Pegasus spyware used kernel 0-day to escape sandbox</p>
+                    <p><strong>Impact:</strong> Access to entire device</p>
+                    <p><strong>Difficulty:</strong> ❌ EXTREMELY HIGH</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">9</span> Code Injection via Frida</h4>
+                    <p><strong>What it is:</strong> Dynamic instrumentation to hook app functions (requires jailbreak).</p>
+                    <p><strong>Use case:</strong> On jailbroken device, intercept banking app functions</p>
+                    <div class="code-block">
+<span class="comment">// Frida script to hook banking login</span>
+Java.perform(<span class="keyword">function</span>() {
+    <span class="keyword">var</span> BankingAPI = Java.use(<span class="string">"com.bank.LoginAPI"</span>);
+    
+    BankingAPI.verifyPin = <span class="keyword">function</span>(pin) {
+        console.log(<span class="string">"PIN: "</span> + pin);
+        <span class="comment">// Send to attacker</span>
+        <span class="keyword">return</span> <span class="keyword">this</span>.verifyPin(pin);
+    };
+});
+                    </div>
+                    <p><strong>Impact:</strong> Credential theft, function manipulation</p>
+                    <p><strong>Difficulty:</strong> 🟡 MEDIUM (with jailbreak)</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">10</span> Zero-Day Exploitation</h4>
+                    <p><strong>What it is:</strong> Exploiting unknown iOS vulnerabilities.</p>
+                    <p><strong>Cost:</strong> $250K - $5M+ per exploit</p>
+                    <p><strong>Buyers:</strong> Governments, intelligence agencies, NSO Group</p>
+                    <p><strong>Impact:</strong> Complete device compromise, undetectable</p>
+                    <p><strong>Difficulty:</strong> ❌ EXTREMELY HIGH</p>
+                </div>
+                
+                <h3>iOS Attacks 11-20: Application Layer</h3>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">11</span> App Runtime Manipulation</h4>
+                    <p><strong>Method:</strong> Modifying app behavior at runtime without code changes.</p>
+                    <p><strong>Tools:</strong> Frida, LLDB debugger, Cycript</p>
+                    <p><strong>Example:</strong> Bypass authentication check in banking app</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">12</span> Encrypted Data Extraction</h4>
+                    <p><strong>Method:</strong> Extracting encrypted app data through forensics or jailbreak.</p>
+                    <p><strong>Tools:</strong> iOS Forensic Toolkit, UFED, GrayKey</p>
+                    <p><strong>Cost:</strong> $200+ per extraction</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">13</span> SSL Pinning Bypass</h4>
+                    <p><strong>Method:</strong> Forcing app to accept attacker's certificate.</p>
+                    <p><strong>Frida Hook:</strong></p>
+                    <div class="code-block">
+<span class="comment">// Bypass SSL certificate pinning</span>
+ObjC.schedule(ObjC.mainQueue, <span class="keyword">function</span>() {
+    <span class="keyword">var</span> challenge = ObjC.classes.NSURLAuthenticationChallenge;
+    challenge.respondWithChallenge_disposition_credential = <span class="keyword">function</span>(ch, d, c) {
+        <span class="keyword">return</span> <span class="string">"allow"</span>;
+    };
+});
+                    </div>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">14</span> Passcode Extraction</h4>
+                    <p><strong>Method:</strong> Extracting device passcode from memory or backup.</p>
+                    <p><strong>Requirement:</strong> Physical access + forensics tools</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">15</span> iMessage Interception</h4>
+                    <p><strong>Method:</strong> Intercepting end-to-end encrypted messages (requires jailbreak/MITM).</p>
+                    <p><strong>Limitation:</strong> E2E encryption makes this nearly impossible</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">16</span> Location Data Theft</h4>
+                    <p><strong>Method:</strong> Accessing location services to track device location.</p>
+                    <p><strong>Tools:</strong> Location spoofers, tracking apps (post-jailbreak)</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">17</span> Photo Library Extraction</h4>
+                    <p><strong>Method:</strong> Accessing all photos/videos from device.</p>
+                    <p><strong>Tools:</strong> iOS Forensics, iMazing</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">18</span> Contact & Calendar Extraction</h4>
+                    <p><strong>Method:</strong> Dumping contacts and calendar events.</p>
+                    <p><strong>Impact:</strong> Privacy breach, social engineering data</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">19</span> Siri Exploitation</h4>
+                    <p><strong>Method:</strong> Using Siri to perform actions (make calls, send messages).</p>
+                    <p><strong>Scenario:</strong> Attacker with physical access activates Siri</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">20</span> iCloud Backup Manipulation</h4>
+                    <p><strong>Method:</strong> Modifying iCloud backup to inject malware.</p>
+                    <p><strong>Requirement:</strong> Control of iCloud account or Apple infrastructure</p>
+                </div>
+                
+                <h3>iOS Attacks 21-30: Advanced Techniques</h3>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">21</span> Bootloader Modification (Nearly Impossible)</h4>
+                    <p><strong>Status:</strong> ❌ Secure Boot prevents this on all recent iOS</p>
+                    <p><strong>Requirement:</strong> Manufacturing-level access (unrealistic)</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">22</span> Pegasus-Style Spyware</h4>
+                    <p><strong>What it is:</strong> Sophisticated spyware using 0-day exploits.</p>
+                    <p><strong>Capabilities:</strong> Full phone monitoring (calls, messages, location, camera)</p>
+                    <p><strong>Operators:</strong> NSO Group (Israeli company), sold to 36+ governments</p>
+                    <p><strong>Impact:</strong> Targets activists, journalists, human rights defenders</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">23</span> ATM/PoS Spoofing via NFC</h4>
+                    <p><strong>What it is:</strong> Creating fake NFC terminal to steal payment data.</p>
+                    <p><strong>Tools:</strong> NFC readers, EMV simulation</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">24</span> Apple ID Reset via SIM Swap</h4>
+                    <p><strong>Method:</strong> SIM swap to gain access to recovery codes, reset password</p>
+                    <p><strong>Impact:</strong> Complete account takeover</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">25</span> MitM Attack via WiFi</h4>
+                    <p><strong>Method:</strong> Creating fake WiFi hotspot to intercept traffic.</p>
+                    <p><strong>Defense:</strong> Certificate pinning, HTTPS enforcement</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">26</span> Bluetooth Low Energy (BLE) Attacks</h4>
+                    <p><strong>Methods:</strong> BlueBorne, KNOB, Key Extraction attacks</p>
+                    <p><strong>Targets:</strong> AirPods, Apple Watch, connected devices</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">27</span> HomeKit Device Hacking</h4>
+                    <p><strong>Method:</strong> Compromising smart home devices to access HomeKit data.</p>
+                    <p><strong>Impact:</strong> Control over smart locks, cameras, lights</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">28</span> iCloud Keychain Sync Exploitation</h4>
+                    <p><strong>Method:</strong> Intercepting keychain synchronization.</p>
+                    <p><strong>Impact:</strong> Access to all stored passwords</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">29</span> Notarization Bypass</h4>
+                    <p><strong>What it is:</strong> Bypassing Apple's code signing/notarization for macOS apps.</p>
+                    <p><strong>Impact:</strong> Run unsigned, malicious code</p>
+                </div>
+                
+                <div class="attack-card">
+                    <h4><span class="attack-number">30</span> Supply Chain Attack via Dependencies</h4>
+                    <p><strong>Method:</strong> Compromising iOS app dependencies (CocoaPods).</p>
+                    <p><strong>Impact:</strong> Millions of apps affected by one malicious pod</p>
+                </div>
+            </div>
+            
+            <!-- Section: Tools & Repositories -->
+            <div class="section" id="tools">
+                <h2>Tools & Repositories: Android vs iOS</h2>
+                
+                <h3>Android Tools (Mature Ecosystem)</h3>
+                
+                <div class="tool-box">
+                    <h4>🔨 Metasploit Framework</h4>
+                    <p><strong>GitHub:</strong> https://github.com/rapid7/metasploit-framework</p>
+                    <p><strong>Purpose:</strong> Exploitation framework with Android payloads</p>
+                    <p><strong>Use:</strong> Generate Android malware, manage exploitation</p>
+                    <p><strong>Android Focus:</strong> ✅ Excellent (100+ Android exploits)</p>
+                </div>
+                
+                <div class="tool-box">
+                    <h4>🔨 Frida</h4>
+                    <p><strong>GitHub:</strong> https://github.com/frida/frida</p>
+                    <p><strong>Purpose:</strong> Dynamic instrumentation for runtime hooking</p>
+                    <p><strong>Use:</strong> Hook functions, intercept calls, modify behavior</p>
+                    <p><strong>Android Focus:</strong> ✅ Excellent | iOS Focus: ✅ Good (post-jailbreak)</p>
+                </div>
+                
+                <div class="tool-box">
+                    <h4>🔨 APKTool</h4>
+                    <p><strong>GitHub:</strong> https://github.com/iBotPeaches/Apktool</p>
+                    <p><strong>Purpose:</strong> Decompile/recompile Android APK files</p>
+                    <p><strong>Android Focus:</strong> ✅ Essential for Android</p>
+                </div>
+                
+                <div class="tool-box">
+                    <h4>🔨 Jadx</h4>
+                    <p><strong>GitHub:</strong> https://github.com/skylot/jadx</p>
+                    <p><strong>Purpose:</strong> Decompile APK to readable Java source</p>
+                    <p><strong>Android Focus:</strong> ✅ Best-in-class</p>
+                </div>
+                
+                <div class="tool-box">
+                    <h4>🔨 Burp Suite</h4>
+                    <p><strong>Website:</strong> https://portswigger.net/burp</p>
+                    <p><strong>Purpose:</strong> Web/API penetration testing with mobile focus</p>
+                    <p><strong>Android Focus:</strong> ✅ Excellent | iOS Focus: ✅ Excellent</p>
+                </div>
+                
+                <h3>iOS-Specific Tools</h3>
+                
+                <div class="tool-box">
+                    <h4>🔨 checkra1n</h4>
+                    <p><strong>GitHub:</strong> https://github.com/checkra1n/checkra1n</p>
+                    <p><strong>Purpose:</strong> Jailbreaking tool (A7-A11 devices, unpatchable exploit)</p>
+                    <p><strong>Impact:</strong> Full iOS access for security testing</p>
+                    <p><strong>iOS Focus:</strong> ✅ Critical for jailbreak testing</p>
+                </div>
+                
+                <div class="tool-box">
+                    <h4>🔨 Keychain Dumper</h4>
+                    <p><strong>GitHub:</strong> https://github.com/ptoomey3/Keychain-Dumper</p>
+                    <p><strong>Purpose:</strong> Extract iOS Keychain contents (post-jailbreak)</p>
+                    <p><strong>Use:</strong> Access stored passwords, tokens, keys</p>
+                    <p><strong>iOS Focus:</strong> ✅ Essential for iOS</p>
+                </div>
+                
+                <div class="tool-box">
+                    <h4>🔨 Cycript</h4>
+                    <p><strong>Website:</strong> http://www.cycript.org/</p>
+                    <p><strong>Purpose:</strong> Interactive console for iOS app runtime manipulation</p>
+                    <p><strong>iOS Focus:</strong> ✅ Powerful iOS tool</p>
+                </div>
+                
+                <div class="tool-box">
+                    <h4>🔨 LLDB (LLVM Debugger)</h4>
+                    <p><strong>Part of Xcode</strong></p>
+                    <p><strong>Purpose:</strong> Debug iOS apps at runtime, inspect memory</p>
+                    <p><strong>iOS Focus:</strong> ✅ Professional iOS development tool</p>
+                </div>
+                
+                <div class="tool-box">
+                    <h4>🔨 Theos</h4>
+                    <p><strong>GitHub:</strong> https://github.com/theos/theos</p>
+                    <p><strong>Purpose:</strong> Tweak development framework for jailbroken iOS</p>
+                    <p><strong>Use:</strong> Create hooks, mods, security tools</p>
+                    <p><strong>iOS Focus:</strong> ✅ Development platform for iOS tweaks</p>
+                </div>
+                
+                <h3>Cross-Platform Tools</h3>
+                
+                <div class="tool-box">
+                    <h4>🔨 mitmproxy</h4>
+                    <p><strong>GitHub:</strong> https://github.com/mitmproxy/mitmproxy</p>
+                    <p><strong>Purpose:</strong> MITM proxy for intercepting HTTPS traffic</p>
+                    <p><strong>Android Focus:</strong> ✅ Excellent | iOS Focus: ✅ Good (with PIN trust)</p>
+                </div>
+                
+                <div class="tool-box">
+                    <h4>🔨 Wireshark</h4>
+                    <p><strong>Website:</strong> https://www.wireshark.org/</p>
+                    <p><strong>Purpose:</strong> Network packet analysis</p>
+                    <p><strong>Android Focus:</strong> ✅ Good | iOS Focus: ✅ Good</p>
+                </div>
+                
+                <h3>Tools Comparison Table</h3>
+                <table class="comparison-table">
+                    <tr>
+                        <th>Tool</th>
+                        <th>Primary Use</th>
+                        <th>Android</th>
+                        <th>iOS</th>
+                        <th>Difficulty</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Metasploit</strong></td>
+                        <td>Exploitation</td>
+                        <td>✅ Excellent</td>
+                        <td>⚠️ Limited</td>
+                        <td>🟡 Medium</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Frida</strong></td>
+                        <td>Dynamic Hooking</td>
+                        <td>✅ Excellent</td>
+                        <td>✅ Good (jailbreak)</td>
+                        <td>🟡 Medium</td>
+                    </tr>
+                    <tr>
+                        <td><strong>APKTool</strong></td>
+                        <td>Decompilation</td>
+                        <td>✅ Essential</td>
+                        <td>❌ N/A</td>
+                        <td>🟢 Easy</td>
+                    </tr>
+                    <tr>
+                        <td><strong>checkra1n</strong></td>
+                        <td>Jailbreaking</td>
+                        <td>❌ N/A</td>
+                        <td>✅ Critical</td>
+                        <td>🟢 Easy</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Burp Suite</strong></td>
+                        <td>API Testing</td>
+                        <td>✅ Excellent</td>
+                        <td>✅ Excellent</td>
+                        <td>🟡 Medium</td>
+                    </tr>
+                    <tr>
+                        <td><strong>LLDB</strong></td>
+                        <td>Debugging</td>
+                        <td>⚠️ Some support</td>
+                        <td>✅ Native</td>
+                        <td>🔴 Hard</td>
+                    </tr>
+                    <tr>
+                        <td><strong>mitmproxy</strong></td>
+                        <td>MITM Proxy</td>
+                        <td>✅ Excellent</td>
+                        <td>✅ Good</td>
+                        <td>🟡 Medium</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <!-- Section: When to Use Which -->
+            <div class="section" id="when-use">
+                <h2>When to Use Which Approach</h2>
+                
+                <h3>Android Penetration Testing: When & Why</h3>
+                
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>✅ Use Android Testing When:</h4>
+                        <ul>
+                            <li>Target is in Tanzania/Africa</li>
+                            <li>Target is general population</li>
+                            <li>Budget is limited</li>
+                            <li>Testing mobile banking</li>
+                            <li>Testing telecom security</li>
+                            <li>Testing financial apps</li>
+                            <li>Want faster exploitation</li>
+                            <li>Testing IoT Android devices</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>❌ Limitations of Android Testing:</h4>
+                        <ul>
+                            <li>Highly fragmented (100+ devices)</li>
+                            <li>Delayed security patches</li>
+                            <li>Device-specific vulnerabilities</li>
+                            <li>OEM customizations complicate</li>
+                            <li>Harder to test at scale</li>
+                            <li>Requires lab setup per device</li>
+                            <li>Less "impressive" to executives</li>
+                            <li>Legacy versions hard to patch</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h3>iOS Penetration Testing: When & Why</h3>
+                
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>✅ Use iOS Testing When:</h4>
+                        <ul>
+                            <li>Target is high-value user</li>
+                            <li>Target is executive/diplomat</li>
+                            <li>Target organization uses iPhones</li>
+                            <li>International penetration test</li>
+                            <li>Testing for sophisticated threats</li>
+                            <li>Want to prove advanced skills</li>
+                            <li>Testing against jailbreak exploits</li>
+                            <li>Higher-budget engagements</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>❌ Limitations of iOS Testing:</h4>
+                        <ul>
+                            <li>Requires jailbreak (not always possible)</li>
+                            <li>Uniform OS (less variation testing)</li>
+                            <li>Expensive equipment (Mac, iPhone)</li>
+                            <li>Requires Apple developer account</li>
+                            <li>Harder to find exploits</li>
+                            <li>More restricted environment</li>
+                            <li>Fewer open-source tools</li>
+                            <li>Requires deep iOS knowledge</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h3>Decision Matrix: Android vs iOS</h3>
+                <table class="comparison-table">
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Best Approach</th>
+                        <th>Reason</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Securing M-Pesa users</strong></td>
+                        <td class="android-col"><span class="android-badge">ANDROID</span></td>
+                        <td>95%+ Tanzania users, mobile payment focus</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Testing bank security</strong></td>
+                        <td class="android-col"><span class="android-badge">ANDROID</span></td>
+                        <td>Customer base overwhelmingly Android</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Enterprise security audit</strong></td>
+                        <td>Both</td>
+                        <td>Employees use both platforms, test both</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Executive protection</strong></td>
+                        <td class="ios-col"><span class="ios-badge">iOS</span></td>
+                        <td>High-profile targets prefer iPhones</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Government agency test</strong></td>
+                        <td>Both</td>
+                        <td>Mix of Android and iOS in government</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Speed hacking/quick test</strong></td>
+                        <td class="android-col"><span class="android-badge">ANDROID</span></td>
+                        <td>Faster exploitation, more tools</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Advanced threat simulation</strong></td>
+                        <td class="ios-col"><span class="ios-badge">iOS</span></td>
+                        <td>More sophisticated, impressive results</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Learning/starting career</strong></td>
+                        <td class="android-col"><span class="android-badge">ANDROID</span></td>
+                        <td>Cheaper, more tools, higher demand</td>
+                    </tr>
+                    <tr>
+                        <td><strong>International opportunities</strong></td>
+                        <td>Both</td>
+                        <td>Master Android for job, add iOS for advancement</td>
+                    </tr>
+                </table>
+                
+                <h3>Career Path Strategy</h3>
+                
+                <div class="architecture-grid">
+                    <div class="arch-box">
+                        <h4>Phase 1: Tanzania (1 Year)</h4>
+                        <p><strong>Focus:</strong> <span class="highlight">ANDROID</span></p>
+                        <ul>
+                            <li>Master 30 Android attacks</li>
+                            <li>Get certified (Security+, CEH)</li>
+                            <li>Build Android portfolio</li>
+                            <li>Get hired locally (2.5-4M TSH)</li>
+                            <li>Learn M-Pesa security</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="arch-box">
+                        <h4>Phase 2: Mid-Career (Year 1-3)</h4>
+                        <p><strong>Focus:</strong> <span class="highlight">BOTH PLATFORMS</span></p>
+                        <ul>
+                            <li>Add iOS expertise</li>
+                            <li>Get OSCP certified</li>
+                            <li>Become full-stack pentester</li>
+                            <li>Advance to senior role (4-7M TSH)</li>
+                            <li>Prepare for international moves</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="arch-box">
+                        <h4>Phase 3: International (Year 3+)</h4>
+                        <p><strong>Focus:</strong> <span class="highlight">iOS + Advanced</span></p>
+                        <ul>
+                            <li>Deep iOS expertise for EU/US</li>
+                            <li>Advanced certifications</li>
+                            <li>Specialize (mobile, cloud, APTs)</li>
+                            <li>Command premium salary (80K-200K USD)</li>
+                            <li>CISO track or deep expert</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Code Examples -->
+            <div class="section" id="code-examples">
+                <h2>Practical Code Examples: Android vs iOS</h2>
+                
+                <h3>Example 1: Intercepting HTTPS Traffic</h3>
+                
+                <h4>Android Approach (Using mitmproxy)</h4>
+                <div class="code-block">
+<span class="comment"># Android MITM - Easy, direct access</span>
+<span class="comment"># Step 1: Install mitmproxy certificate</span>
+adb shell settings put global http_proxy 192.168.1.100:8080
+
+<span class="comment"># Step 2: Run mitmproxy with modification</span>
+cat &gt; modify_responses.py &lt;&lt; EOF
+<span class="keyword">from</span> mitmproxy <span class="keyword">import</span> http
+
+<span class="keyword">class</span> <span class="function">ModifyResponses</span>:
+    <span class="keyword">def</span> <span class="function">response</span>(<span class="keyword">self</span>, flow: http.HTTPFlow):
+        <span class="keyword">if</span> <span class="string">"api.m-pesa.co.tz"</span> <span class="keyword">in</span> flow.request.host:
+            <span class="comment"># Modify M-Pesa response</span>
+            flow.response.text = <span class="string">'{"balance": 999999999}'</span>
+EOF
+
+mitmproxy -p 8080 -s modify_responses.py
+                </div>
+                
+                <h4>iOS Approach (Using Burp Suite with Certificate)</h4>
+                <div class="code-block">
+<span class="comment">// iOS MITM - More complex, certificate required</span>
+<span class="comment">// Step 1: Install Burp CA certificate on iPhone</span>
+<span class="comment">// Settings > Downloaded Profile > Install</span>
+<span class="comment">// Settings > General > About > Certificate Trust Settings > Enable Burp</span>
+
+<span class="comment">// Step 2: Configure WiFi proxy</span>
+<span class="comment">// WiFi > Advanced > Proxy > Manual</span>
+<span class="comment">// Server: attacker.com</span>
+<span class="comment">// Port: 8080</span>
+
+<span class="comment">// Step 3: All HTTPS traffic now intercepted in Burp</span>
+<span class="comment">// Modify requests/responses in Burp UI</span>
+
+<span class="comment">// Key difference: iOS enforces certificate validation</span>
+<span class="comment">// Must trust CA certificate in settings</span>
+<span class="comment">// Android easier: just set proxy</span>
+                </div>
+                
+                <h3>Example 2: Extracting Stored Credentials</h3>
+                
+                <h4>Android Approach (Using Frida)</h4>
+                <div class="code-block">
+<span class="comment">// Android credential extraction with Frida</span>
+<span class="keyword">var</span> <span class="function">SharedPreferences</span> = Java.use(
+    <span class="string">"android.content.SharedPreferences"</span>
+);
+
+SharedPreferences.<span class="function">getString</span> = <span class="keyword">function</span>(key, defValue) {
+    console.log(<span class="string">"[Credentials]"</span> + key);
+    <span class="keyword">var</span> result = <span class="keyword">this</span>.<span class="function">getString</span>(key, defValue);
+    console.log(<span class="string">"Value: "</span> + result);
+    <span class="keyword">return</span> result;
+};
+
+<span class="comment">// Also access databases directly</span>
+<span class="keyword">var</span> files = <span class="string">"/data/data/com.bank.app/shared_prefs/"</span>;
+<span class="comment">// adb shell cat files/*.xml</span>
+<span class="comment">// Outputs XML with credentials in plaintext</span>
+                </div>
+                
+                <h4>iOS Approach (Using Keychain Dumper)</h4>
+                <div class="code-block">
+<span class="comment">// iOS credential extraction (post-jailbreak only)</span>
+<span class="comment">// Step 1: SSH into jailbroken iPhone</span>
+ssh root@192.168.1.150
+
+<span class="comment">// Step 2: Download keychain dumper</span>
+wget https://github.com/ptoomey3/Keychain-Dumper/releases/
+./keychain_dumper
+
+<span class="comment">// Step 3: Output shows:</span>
+<span class="comment">// [*] Initializing Keychain Dumper</span>
+<span class="comment">// [*] Getting Keychain Entitlements</span>
+<span class="comment">// [*] Dumping Keychain Items</span>
+<span class="comment">// account: john.doe@example.com</span>
+<span class="comment">// password: MySecurePassword123!</span>
+
+<span class="comment">// iOS Keychain encryption makes this harder</span>
+<span class="comment">// Must jailbreak first (not always possible)</span>
+<span class="comment">// Android: direct filesystem access</span>
+                </div>
+                
+                <h3>Example 3: Bypassing Certificate Pinning</h3>
+                
+                <h4>Android Approach (Using Frida)</h4>
+                <div class="code-block">
+<span class="comment">// Android certificate pinning bypass (Frida)</span>
+Java.perform(<span class="keyword">function</span>() {
+    <span class="keyword">var</span> CertificatePinner = Java.use(
+        <span class="string">"okhttp3.CertificatePinner"</span>
+    );
+    
+    CertificatePinner.<span class="function">check</span> = <span class="keyword">function</span>(hostname, pins) {
+        console.log(<span class="string">"[!] Certificate pinning bypassed for: "</span> + hostname);
+        <span class="comment">// Don't verify, just return (allow all)</span>
+        <span class="keyword">return</span>;
+    };
+});
+
+<span class="comment">// Even easier: Disable certificate validation</span>
+<span class="keyword">var</span> TrustManager = Java.use(
+    <span class="string">"javax.net.ssl.TrustManager"</span>
+);
+
+TrustManager.<span class="function">checkServerTrusted</span> = <span class="keyword">function</span>(certs, authType) {
+    console.log(<span class="string">"[!] Certificate validation bypassed"</span>);
+    <span class="keyword">return</span>;
+};
+                </div>
+                
+                <h4>iOS Approach (Using Frida post-jailbreak)</h4>
+                <div class="code-block">
+<span class="comment">// iOS certificate pinning bypass (requires jailbreak + Frida)</span>
+ObjC.schedule(ObjC.mainQueue, <span class="keyword">function</span>() {
+    <span class="keyword">var</span> URLSession = ObjC.classes.NSURLSession;
+    <span class="keyword">var</span> config = ObjC.classes.NSURLSessionConfiguration;
+    
+    <span class="comment">// Disable SSL verification</span>
+    config.<span class="function">setWaitsForConnectivity</span>(<span class="keyword">true</span>);
+    
+    console.log(<span class="string">"[!] SSL pinning would be bypassed here"</span>);
+});
+
+<span class="comment">// iOS makes this harder:</span>
+<span class="comment">// 1. Requires jailbreak (Apple prevents root)</span>
+<span class="comment">// 2. Code signing prevents code injection</span>
+<span class="comment">// 3. Frida only works on jailbroken devices</span>
+<span class="comment">// Android: Much easier, no jailbreak needed</span>
+                </div>
+            </div>
+            
+            <!-- Defense Section -->
+            <div class="section" id="defense">
+                <h2>Comprehensive Defense Strategies</h2>
+                
+                <h3>Android Defense Checklist</h3>
+                <table class="comparison-table">
+                    <tr>
+                        <th>Defense Layer</th>
+                        <th>Strategy</th>
+                        <th>Implementation</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Code Level</strong></td>
+                        <td>Obfuscation</td>
+                        <td>ProGuard/R8 (rename classes, remove dead code)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Code Level</strong></td>
+                        <td>No Hardcoded Secrets</td>
+                        <td>Store API keys on server, fetch at runtime</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Communication</strong></td>
+                        <td>HTTPS + Certificate Pinning</td>
+                        <td>NetworkSecurityConfig XML + OkHttp pinner</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Storage</strong></td>
+                        <td>Encrypted SharedPreferences</td>
+                        <td>EncryptedSharedPreferences (AES-256-GCM)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Storage</strong></td>
+                        <td>Encrypted Database</td>
+                        <td>SQLCipher (encrypted SQLite)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Authentication</strong></td>
+                        <td>Biometric + PIN</td>
+                        <td>BiometricPrompt (fingerprint/face + PIN fallback)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Permissions</strong></td>
+                        <td>Runtime Permission Checks</td>
+                        <td>Check before accessing sensitive resources</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rooting</strong></td>
+                        <td>Detect Rooted Devices</td>
+                        <td>Check for su binary, Xposed, Magisk</td>
+                    </tr>
+                </table>
+                
+                <h3>iOS Defense Checklist</h3>
+                <table class="comparison-table">
+                    <tr>
+                        <th>Defense Layer</th>
+                        <th>Strategy</th>
+                        <th>Implementation</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Code Level</strong></td>
+                        <td>Swift over Objective-C</td>
+                        <td>Swift has memory safety features</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Code Level</strong></td>
+                        <td>No Hardcoded Secrets</td>
+                        <td>Use Keychain, fetch from secure server</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Communication</strong></td>
+                        <td>HTTPS Only (ATS Enforced)</td>
+                        <td>NSAppTransportSecurity allows HTTPS only</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Communication</strong></td>
+                        <td>Certificate Pinning</td>
+                        <td>Use TrustKit or manual validation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Storage</strong></td>
+                        <td>Keychain for Secrets</td>
+                        <td>Store passwords, tokens in Keychain</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Storage</strong></td>
+                        <td>Core Data Encryption</td>
+                        <td>Enable SQLite encryption</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Authentication</strong></td>
+                        <td>Biometric Authentication</td>
+                        <td>LocalAuthentication framework</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Jailbreak</strong></td>
+                        <td>Detect Jailbreaking</td>
+                        <td>Check for Cydia, check file permissions</td>
+                    </tr>
+                </table>
+                
+                <h3>Tanzania-Specific Defenses (M-Pesa, Banking)</h3>
+                
+                <div class="warning">
+                    <strong>⚠️ Critical for Tanzania Banking Apps:</strong>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li><strong>SIM Swap Protection:</strong> Don't rely on SMS OTP alone, require app-based authentication</li>
+                        <li><strong>M-Pesa PIN:</strong> Don't store in plaintext, use secure enclave</li>
+                        <li><strong>Device Binding:</strong> Tie auth to specific device hardware ID</li>
+                        <li><strong>Offline Verification:</strong> Support offline transaction verification</li>
+                        <li><strong>Biometric 2FA:</strong> Require fingerprint for high-value transactions</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Conclusion -->
+            <div class="section">
+                <h2>Conclusion: Mastering Both Platforms</h2>
+                
+                <h3>Your Path Forward</h3>
+                
+                <div class="success">
+                    <strong>✅ Key Takeaways:</strong>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>Android (95% of Tanzania) = Primary focus for local jobs</li>
+                        <li>iOS (international) = Critical for career advancement</li>
+                        <li>Different attack vectors = Different testing methodologies</li>
+                        <li>Both platforms important = Complete professional</li>
+                        <li>Start with Android, add iOS = Smart career progression</li>
+                    </ul>
+                </div>
+                
+                <h3>Next Actions</h3>
+                
+                <div class="architecture-grid">
+                    <div class="arch-box">
+                        <h4>Immediate (Month 1)</h4>
+                        <ul>
+                            <li>Deep dive Android attacks</li>
+                            <li>Set up Android lab</li>
+                            <li>Master Metasploit</li>
+                            <li>Study 10 attacks in detail</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="arch-box">
+                        <h4>Short-term (Month 2-3)</h4>
+                        <ul>
+                            <li>Get Security+ cert</li>
+                            <li>Get CEH cert</li>
+                            <li>Understand iOS basics</li>
+                            <li>Study iOS architecture</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="arch-box">
+                        <h4>Medium-term (Month 4-6)</h4>
+                        <ul>
+                            <li>Master both Android & iOS</li>
+                            <li>Get hired as junior pentester</li>
+                            <li>Build professional portfolio</li>
+                            <li>Start OSCP prep</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="arch-box">
+                        <h4>Long-term (Year 2+)</h4>
+                        <ul>
+                            <li>Advance to senior roles</li>
+                            <li>Specialize in iOS/APTs</li>
+                            <li>Move to international</li>
+                            <li>Command premium salary</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>Cross-Platform Mobile Security Masterclass</strong></p>
+            <p>Complete guide for Android vs iOS penetration testing</p>
+            <p>For Tanzania cybersecurity professionals</p>
+            <p style="margin-top: 20px; opacity: 0.8;">
+                Last Updated: June 2026 | For Educational Use Only | Follow Local Laws
+            </p>
+        </div>
+    </div>
+</body>
+</html>

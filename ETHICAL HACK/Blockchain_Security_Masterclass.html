@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Security Masterclass: Smart Contract Auditing & Exploitation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 80px 40px;
+            text-align: center;
+            border-bottom: 6px solid #FFD700;
+        }
+        
+        .header h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4);
+        }
+        
+        .header p {
+            font-size: 1.3em;
+            opacity: 0.95;
+            margin: 10px 0;
+        }
+        
+        .content {
+            padding: 50px;
+        }
+        
+        .section {
+            margin-bottom: 60px;
+            border-left: 8px solid #667eea;
+            padding-left: 40px;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .section h3 {
+            color: #764ba2;
+            font-size: 1.8em;
+            margin-top: 35px;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #FFD700;
+            padding-bottom: 10px;
+        }
+        
+        .intro-box {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+            border-left: 6px solid #667eea;
+        }
+        
+        .intro-box p {
+            font-size: 1.1em;
+            line-height: 1.9;
+            margin-bottom: 15px;
+        }
+        
+        .highlight {
+            background: #FFD700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+        
+        .vulnerability-card {
+            background: white;
+            border: 3px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .vulnerability-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.2);
+            transform: translateX(5px);
+        }
+        
+        .vuln-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .vuln-title {
+            color: #667eea;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+        
+        .severity-badge {
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 0.95em;
+            white-space: nowrap;
+        }
+        
+        .severity-critical {
+            background: #FF1744;
+            color: white;
+        }
+        
+        .severity-high {
+            background: #FF6F00;
+            color: white;
+        }
+        
+        .severity-medium {
+            background: #FFC107;
+            color: #333;
+        }
+        
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 25px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            border-left: 5px solid #FFD700;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            line-height: 1.6;
+        }
+        
+        .code-label {
+            color: #FFD700;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+        
+        .keyword { color: #569CD6; }
+        .string { color: #CE9178; }
+        .comment { color: #6A9955; }
+        .function { color: #DCDCAA; }
+        .type { color: #4EC9B0; }
+        .number { color: #B5CEA8; }
+        
+        .vulnerability-details {
+            margin: 20px 0;
+        }
+        
+        .detail-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .detail-label {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .detail-content {
+            color: #555;
+            line-height: 1.7;
+        }
+        
+        .impact-box {
+            background: #ffebee;
+            border-left: 5px solid #F44336;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .impact-box h4 {
+            color: #C62828;
+            margin-bottom: 10px;
+        }
+        
+        .exploit-box {
+            background: #fff3e0;
+            border-left: 5px solid #FF9800;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .exploit-box h4 {
+            color: #E65100;
+            margin-bottom: 10px;
+        }
+        
+        .fix-box {
+            background: #e8f5e9;
+            border-left: 5px solid #4CAF50;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .fix-box h4 {
+            color: #2E7D32;
+            margin-bottom: 10px;
+        }
+        
+        .real-world-hack {
+            background: linear-gradient(135deg, #fff8e1 0%, #ffe0b2 100%);
+            border-left: 6px solid #FF6F00;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 30px 0;
+        }
+        
+        .real-world-hack h4 {
+            color: #E65100;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .real-world-hack p {
+            margin-bottom: 10px;
+            line-height: 1.8;
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .comparison-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .comparison-table td {
+            padding: 18px 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .comparison-table tr:nth-child(even) {
+            background: #f8f9ff;
+        }
+        
+        .comparison-table tr:hover {
+            background: #e8ebff;
+        }
+        
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+        
+        .tool-card {
+            background: white;
+            border: 3px solid #667eea;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+        }
+        
+        .tool-card h4 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 1.3em;
+        }
+        
+        .tool-card p {
+            color: #555;
+            margin-bottom: 10px;
+            line-height: 1.7;
+        }
+        
+        .tool-tag {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .lab-exercise {
+            background: #e3f2fd;
+            border-left: 6px solid #2196F3;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 30px 0;
+        }
+        
+        .lab-exercise h4 {
+            color: #1565C0;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .lab-exercise ol {
+            margin-left: 20px;
+            line-height: 2;
+        }
+        
+        .lab-exercise li {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .checklist {
+            background: #f0f4ff;
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .checklist ul {
+            list-style: none;
+            margin-left: 0;
+        }
+        
+        .checklist li {
+            margin-bottom: 12px;
+            padding-left: 30px;
+            position: relative;
+        }
+        
+        .checklist li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .key-takeaway {
+            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+            border-radius: 10px;
+            padding: 25px;
+            border-left: 6px solid #667eea;
+            margin: 30px 0;
+        }
+        
+        .key-takeaway strong {
+            color: #667eea;
+            font-size: 1.1em;
+        }
+        
+        .footer {
+            background: #222;
+            color: #ddd;
+            padding: 40px;
+            text-align: center;
+            border-top: 5px solid #FFD700;
+        }
+        
+        .footer h3 {
+            margin-bottom: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .section h2 {
+                font-size: 1.8em;
+            }
+            
+            .section h3 {
+                font-size: 1.3em;
+            }
+            
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔗 BLOCKCHAIN SECURITY MASTERCLASS</h1>
+            <p>Smart Contract Vulnerabilities, Exploitation & Professional Auditing</p>
+            <p style="color: #FFD700; font-weight: bold; margin-top: 20px;">
+                Complete Guide for Tanzania's First Blockchain Security Auditors
+            </p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Introduction -->
+            <div class="section">
+                <h2>🎓 Why Blockchain Security Matters RIGHT NOW</h2>
+                
+                <div class="intro-box">
+                    <p>
+                        <strong>The blockchain security market is EXPLOSIVE:</strong>
+                    </p>
+                    <ul style="margin-left: 20px; font-size: 1.05em; line-height: 2;">
+                        <li>💰 <strong>$14.2 TRILLION</strong> locked in smart contracts (2024)</li>
+                        <li>🐛 <strong>$14 BILLION</strong> lost to hacks since 2011</li>
+                        <li>💼 <strong>Smart contract auditors earn $500K-$1M+</strong> per year</li>
+                        <li>🌍 <strong>Only ~100 expert auditors worldwide</strong> (massive shortage)</li>
+                        <li>📈 <strong>Growing 40% annually</strong> as blockchain adoption accelerates</li>
+                    </ul>
+                    <p style="margin-top: 20px; font-size: 1.05em;">
+                        <span class="highlight">YOU can be one of Africa's first blockchain security experts.</span>
+                        Auditors from Tanzania could easily earn $5-10M TSH per audit in international market.
+                    </p>
+                </div>
+                
+                <h3>What You'll Learn Today</h3>
+                <p>
+                    This masterclass covers <strong>everything you need to understand and audit smart contracts professionally</strong>:
+                </p>
+                <div class="checklist">
+                    <ul>
+                        <li>Blockchain and Ethereum fundamentals</li>
+                        <li>Solidity programming language basics</li>
+                        <li>Top 15+ critical vulnerabilities with real exploits</li>
+                        <li>How $500M+ hacks happened (and how to prevent them)</li>
+                        <li>Professional auditing methodology</li>
+                        <li>Tools and frameworks used by top auditors</li>
+                        <li>How to build automated audit system</li>
+                        <li>Career path to $1M+ earnings</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Section 1: Blockchain Fundamentals -->
+            <div class="section">
+                <h2>🔧 Blockchain & Ethereum Fundamentals</h2>
+                
+                <h3>What is Blockchain?</h3>
+                <p>
+                    A blockchain is a <strong>distributed ledger</strong> where transactions are grouped into blocks, 
+                    cryptographically linked together in a chain. Key property: <span class="highlight">immutability</span> - 
+                    once data is recorded, it cannot be changed without redoing all subsequent work.
+                </p>
+                
+                <h3>What is Ethereum?</h3>
+                <p>
+                    Ethereum extends blockchain concept with <strong>smart contracts</strong> - programs that run on the 
+                    blockchain and execute automatically when conditions are met. Unlike Bitcoin (just transactions), 
+                    Ethereum allows arbitrary computation.
+                </p>
+                
+                <h3>Smart Contracts Explained</h3>
+                <div class="detail-item">
+                    <div class="detail-label">Simple Analogy:</div>
+                    <div class="detail-content">
+                        A smart contract is like a vending machine:
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>Put in money (send cryptocurrency)</li>
+                            <li>Machine executes logic (smart contract code runs)</li>
+                            <li>Get product (receive output)</li>
+                            <li>No middleman needed (trustless execution)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h3>Ethereum Virtual Machine (EVM)</h3>
+                <p>
+                    Smart contracts run on the <strong>EVM</strong>, a sandboxed virtual machine. Every node in the network 
+                    runs the same code and reaches the same state. This is how consensus is achieved.
+                </p>
+                
+                <div class="detail-item">
+                    <div class="detail-label">Key Concepts:</div>
+                    <div class="detail-content">
+                        <strong>Gas:</strong> Every operation costs "gas" (computational cost in ETH). This prevents infinite loops and DoS attacks.
+                        <br><strong>State:</strong> Contracts store state (variables). Each transaction changes state.
+                        <br><strong>Transactions:</strong> Externally-owned accounts (users) initiate transactions. Contract calls are part of transactions.
+                    </div>
+                </div>
+                
+                <h3>Solidity Language Basics</h3>
+                <div class="code-block">
+                    <div class="code-label">basic_solidity.sol</div>
+                    <pre><span class="comment">// SPDX-License-Identifier: MIT</span>
+<span class="keyword">pragma solidity</span> ^<span class="number">0.8</span>.<span class="number">0</span>;
+
+<span class="keyword">contract</span> <span class="type">SimpleBank</span> {
+    <span class="comment">// State variables (stored on blockchain)</span>
+    <span class="keyword">mapping</span>(<span class="keyword">address</span> =&gt; <span class="keyword">uint</span>) <span class="keyword">public</span> balances;
+    <span class="keyword">address</span> <span class="keyword">public</span> owner;
+    
+    <span class="comment">// Constructor - runs once when contract deployed</span>
+    <span class="keyword">constructor</span>() {
+        owner = msg.sender;  <span class="comment">// msg.sender = deployer address</span>
+    }
+    
+    <span class="comment">// Function to deposit ETH</span>
+    <span class="keyword">function</span> <span class="function">deposit</span>() <span class="keyword">public</span> <span class="keyword">payable</span> {
+        <span class="comment">// msg.value = amount of ETH sent with transaction</span>
+        balances[msg.sender] += msg.value;
+    }
+    
+    <span class="comment">// Function to withdraw ETH (VULNERABLE - see later!)</span>
+    <span class="keyword">function</span> <span class="function">withdraw</span>(<span class="keyword">uint</span> amount) <span class="keyword">public</span> {
+        <span class="keyword">require</span>(balances[msg.sender] &gt;= amount);
+        (bool success, ) = msg.sender.<span class="function">call</span>{value: amount}(<span class="string">""</span>);
+        <span class="keyword">require</span>(success);
+        balances[msg.sender] -= amount;
+    }
+}</pre>
+                </div>
+            </div>
+            
+            <!-- Section 2: Solidity Vulnerabilities -->
+            <div class="section">
+                <h2>⚠️ Top 15 Critical Smart Contract Vulnerabilities</h2>
+                
+                <p style="font-size: 1.1em; margin-bottom: 30px;">
+                    These are the vulnerabilities that have caused <span class="highlight">$14+ BILLION in losses</span>. 
+                    Master these and you can audit contracts worth millions.
+                </p>
+                
+                <!-- VULNERABILITY 1: REENTRANCY -->
+                <div class="vulnerability-card">
+                    <div class="vuln-header">
+                        <div class="vuln-title">1. REENTRANCY ATTACK</div>
+                        <span class="severity-badge severity-critical">CRITICAL</span>
+                    </div>
+                    
+                    <div class="vulnerability-details">
+                        <div class="detail-item">
+                            <div class="detail-label">What is it?</div>
+                            <div class="detail-content">
+                                Attacker calls a function that sends ETH, then the attacker's fallback function 
+                                calls the same function again before the first call finishes. This can drain all funds.
+                            </div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">Why it matters?</div>
+                            <div class="detail-content">
+                                <strong>The DAO Hack (2016):</strong> $50 MILLION stolen using reentrancy. 
+                                Led to Ethereum hard fork. This single vulnerability has caused more damage than any other.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="code-block">
+                        <div class="code-label">vulnerable_code.sol - REENTRANCY VULNERABILITY</div>
+                        <pre><span class="keyword">contract</span> <span class="type">VulnerableBank</span> {
+    <span class="keyword">mapping</span>(<span class="keyword">address</span> =&gt; <span class="keyword">uint</span>) balances;
+    
+    <span class="keyword">function</span> <span class="function">withdraw</span>(<span class="keyword">uint</span> amount) <span class="keyword">public</span> {
+        <span class="comment">// VULNERABLE: External call before state update</span>
+        (<span class="keyword">bool</span> success, ) = msg.sender.<span class="function">call</span>{
+            value: amount
+        }(<span class="string">""</span>);
+        <span class="keyword">require</span>(success);
+        
+        <span class="comment">// This line executes AFTER external call</span>
+        <span class="comment">// Attacker can call withdraw() again from fallback!</span>
+        balances[msg.sender] -= amount;
+    }
+    
+    <span class="comment">// Fallback function - executed when contract receives ETH</span>
+    <span class="keyword">fallback</span>() <span class="keyword">external</span> <span class="keyword">payable</span> {
+        <span class="comment">// Attacker calls withdraw() again here</span>
+        <span class="comment">// balances haven't been updated yet!</span>
+        <span class="keyword">this</span>.<span class="function">withdraw</span>(amount);
+    }
+}</pre>
+                    </div>
+                    
+                    <div class="code-block">
+                        <div class="code-label">exploit_code.sol - HOW ATTACKER EXPLOITS IT</div>
+                        <pre><span class="keyword">contract</span> <span class="type">Attacker</span> {
+    VulnerableBank bank;
+    
+    <span class="keyword">constructor</span>(<span class="keyword">address</span> _bank) {
+        bank = VulnerableBank(_bank);
+    }
+    
+    <span class="keyword">function</span> <span class="function">attack</span>() <span class="keyword">external</span> <span class="keyword">payable</span> {
+        <span class="comment">// Step 1: Send initial deposit to bank</span>
+        bank.<span class="function">deposit</span>{value: <span class="number">1</span> ether}();
+        
+        <span class="comment">// Step 2: Initiate withdrawal</span>
+        <span class="comment">// This triggers reentrancy in fallback()</span>
+        bank.<span class="function">withdraw</span>(<span class="number">1</span> ether);
+    }
+    
+    <span class="comment">// This gets called when bank sends ETH</span>
+    <span class="keyword">fallback</span>() <span class="keyword">external</span> <span class="keyword">payable</span> {
+        <span class="keyword">if</span> (address(bank).balance &gt; <span class="number">0</span>) {
+            <span class="comment">// Call withdraw() again while balance hasn't updated</span>
+            bank.<span class="function">withdraw</span>(<span class="number">1</span> ether);
+        }
+    }
+    
+    <span class="comment">// Result: Attacker withdraws 10x the deposited amount!</span>
+}</pre>
+                    </div>
+                    
+                    <div class="impact-box">
+                        <h4>🚨 Impact:</h4>
+                        <p>
+                            Complete fund drainage. Attacker can extract all ETH from contract. 
+                            <strong>The DAO lost $50 million in minutes.</strong>
+                        </p>
+                    </div>
+                    
+                    <div class="fix-box">
+                        <h4>✅ Fix #1: Checks-Effects-Interactions Pattern</h4>
+                        <div class="code-block" style="margin-top: 10px;">
+                            <pre><span class="keyword">function</span> <span class="function">withdraw</span>(<span class="keyword">uint</span> amount) <span class="keyword">public</span> {
+    <span class="comment">// 1. CHECKS: Validate preconditions</span>
+    <span class="keyword">require</span>(balances[msg.sender] &gt;= amount);
+    
+    <span class="comment">// 2. EFFECTS: Modify state FIRST</span>
+    balances[msg.sender] -= amount;
+    
+    <span class="comment">// 3. INTERACTIONS: Only then external call</span>
+    (<span class="keyword">bool</span> success, ) = msg.sender.<span class="function">call</span>{value: amount}(<span class="string">""</span>);
+    <span class="keyword">require</span>(success);
+}</pre>
+                        </div>
+                    </div>
+                    
+                    <div class="fix-box">
+                        <h4>✅ Fix #2: Mutex Lock (Reentrancy Guard)</h4>
+                        <div class="code-block" style="margin-top: 10px;">
+                            <pre><span class="keyword">contract</span> <span class="type">SafeBank</span> {
+    <span class="keyword">bool</span> locked;
+    
+    <span class="keyword">modifier</span> <span class="function">nonReentrant</span>() {
+        <span class="keyword">require</span>(!locked);
+        locked = <span class="keyword">true</span>;
+        _;
+        locked = <span class="keyword">false</span>;
+    }
+    
+    <span class="keyword">function</span> <span class="function">withdraw</span>(<span class="keyword">uint</span> amount) <span class="keyword">public</span> <span class="function">nonReentrant</span> {
+        <span class="comment">// Even if fallback tries to call withdraw() again,</span>
+        <span class="comment">// locked = true prevents it!</span>
+        balances[msg.sender] -= amount;
+        msg.sender.<span class="function">call</span>{value: amount}(<span class="string">""</span>);
+    }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- VULNERABILITY 2: INTEGER OVERFLOW/UNDERFLOW -->
+                <div class="vulnerability-card">
+                    <div class="vuln-header">
+                        <div class="vuln-title">2. INTEGER OVERFLOW / UNDERFLOW</div>
+                        <span class="severity-badge severity-high">HIGH</span>
+                    </div>
+                    
+                    <div class="vulnerability-details">
+                        <div class="detail-item">
+                            <div class="detail-label">What is it?</div>
+                            <div class="detail-content">
+                                uint256 can hold 0 to 2^256-1. If you add 1 to max value, it wraps to 0. 
+                                If you subtract 1 from 0, it becomes 2^256-1. Solidity 0.8+ has built-in checks, 
+                                but older versions are vulnerable.
+                            </div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">Real hack:</div>
+                            <div class="detail-content">
+                                <strong>BeautyChain (BEC) Token (2018):</strong> 
+                                Attacker exploited integer overflow to create 999 quadrillion fake tokens. 
+                                The token became worthless overnight.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="code-block">
+                        <div class="code-label">vulnerable_code.sol - INTEGER OVERFLOW</div>
+                        <pre><span class="keyword">pragma solidity</span> ^<span class="number">0.7</span>.<span class="number">0</span>;  <span class="comment">// Solidity 0.7 - vulnerable!</span>
+
+<span class="keyword">contract</span> <span class="type">VulnerableToken</span> {
+    <span class="keyword">mapping</span>(<span class="keyword">address</span> =&gt; <span class="keyword">uint</span>) balances;
+    
+    <span class="keyword">function</span> <span class="function">transfer</span>(<span class="keyword">address</span> to, <span class="keyword">uint</span> amount) <span class="keyword">public</span> {
+        balances[msg.sender] -= amount;  <span class="comment">// Underflow!</span>
+        balances[to] += amount;           <span class="comment">// Overflow!</span>
+    }
+}
+
+<span class="comment">// Attack: User has 10 tokens, sends 11</span>
+<span class="comment">// balances[attacker] = 10 - 11</span>
+<span class="comment">// In uint: 10 - 11 = 2^256 - 1 (HUGE number!)</span></pre>
+                    </div>
+                    
+                    <div class="fix-box">
+                        <h4>✅ Fix: Use Solidity 0.8+ (has automatic checks)</h4>
+                        <div class="code-block" style="margin-top: 10px;">
+                            <pre><span class="keyword">pragma solidity</span> ^<span class="number">0.8</span>.<span class="number">0</span>;  <span class="comment">// Solidity 0.8+ has overflow protection</span>
+
+<span class="comment">// In Solidity 0.8+, overflow/underflow reverts automatically</span>
+<span class="comment">// No need for SafeMath library!</span></pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- VULNERABILITY 3: ACCESS CONTROL -->
+                <div class="vulnerability-card">
+                    <div class="vuln-header">
+                        <div class="vuln-title">3. MISSING ACCESS CONTROL</div>
+                        <span class="severity-badge severity-critical">CRITICAL</span>
+                    </div>
+                    
+                    <div class="vulnerability-details">
+                        <div class="detail-item">
+                            <div class="detail-label">What is it?</div>
+                            <div class="detail-content">
+                                Functions that should be restricted to only the owner or specific roles 
+                                are public to everyone.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="code-block">
+                        <div class="code-label">vulnerable_code.sol - MISSING ACCESS CONTROL</div>
+                        <pre><span class="keyword">contract</span> <span class="type">VulnerableContract</span> {
+    <span class="keyword">address</span> <span class="keyword">public</span> owner;
+    <span class="keyword">uint</span> <span class="keyword">public</span> funds;
+    
+    <span class="keyword">constructor</span>() {
+        owner = msg.sender;
+    }
+    
+    <span class="comment">// VULNERABLE: Anyone can call this!</span>
+    <span class="keyword">function</span> <span class="function">withdraw</span>() <span class="keyword">public</span> {
+        <span class="comment">// No check that msg.sender == owner</span>
+        msg.sender.<span class="function">call</span>{value: funds}(<span class="string">""</span>);
+        funds = <span class="number">0</span>;
+    }
+}</pre>
+                    </div>
+                    
+                    <div class="fix-box">
+                        <h4>✅ Fix: Add onlyOwner modifier</h4>
+                        <div class="code-block" style="margin-top: 10px;">
+                            <pre><span class="keyword">contract</span> <span class="type">SecureContract</span> {
+    <span class="keyword">address</span> <span class="keyword">public</span> owner;
+    
+    <span class="keyword">modifier</span> <span class="function">onlyOwner</span>() {
+        <span class="keyword">require</span>(msg.sender == owner, <span class="string">"Not owner"</span>);
+        _;
+    }
+    
+    <span class="keyword">function</span> <span class="function">withdraw</span>() <span class="keyword">public</span> <span class="function">onlyOwner</span> {
+        <span class="comment">// Now only owner can call this</span>
+        msg.sender.<span class="function">call</span>{value: funds}(<span class="string">""</span>);
+    }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- VULNERABILITY 4: UNCHECKED EXTERNAL CALLS -->
+                <div class="vulnerability-card">
+                    <div class="vuln-header">
+                        <div class="vuln-title">4. UNCHECKED EXTERNAL CALL RETURN VALUES</div>
+                        <span class="severity-badge severity-high">HIGH</span>
+                    </div>
+                    
+                    <div class="code-block">
+                        <div class="code-label">vulnerable_code.sol - UNCHECKED CALL</div>
+                        <pre><span class="keyword">contract</span> <span class="type">VulnerablePayment</span> {
+    <span class="keyword">function</span> <span class="function">payWithTransfer</span>(<span class="keyword">address</span> token) <span class="keyword">public</span> {
+        <span class="comment">// VULNERABLE: Ignoring return value!</span>
+        token.<span class="function">call</span>(
+            abi.encodeWithSignature(
+                <span class="string">"transfer(address,uint256)"</span>,
+                recipient,
+                <span class="number">100</span>
+            )
+        );
+        <span class="comment">// If transfer fails, code continues anyway!</span>
+        balance -= <span class="number">100</span>;
+    }
+}</pre>
+                    </div>
+                    
+                    <div class="fix-box">
+                        <h4>✅ Fix: Check return value</h4>
+                        <div class="code-block" style="margin-top: 10px;">
+                            <pre><span class="keyword">function</span> <span class="function">payWithTransfer</span>(<span class="keyword">address</span> token) <span class="keyword">public</span> {
+    (<span class="keyword">bool</span> success, <span class="keyword">bytes</span> <span class="keyword">memory</span> data) = token.<span class="function">call</span>(...);
+    <span class="keyword">require</span>(success, <span class="string">"Transfer failed"</span>);
+    balance -= <span class="number">100</span>;
+}</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- VULNERABILITY 5: DELEGATE CALL -->
+                <div class="vulnerability-card">
+                    <div class="vuln-header">
+                        <div class="vuln-title">5. UNSAFE DELEGATECALL</div>
+                        <span class="severity-badge severity-critical">CRITICAL</span>
+                    </div>
+                    
+                    <div class="vulnerability-details">
+                        <div class="detail-item">
+                            <div class="detail-label">What is it?</div>
+                            <div class="detail-content">
+                                DELEGATECALL executes code from another contract in the current contract's context. 
+                                If the called contract is malicious, it can modify your state or steal funds.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="code-block">
+                        <div class="code-label">vulnerable_code.sol - UNSAFE DELEGATECALL</div>
+                        <pre><span class="keyword">contract</span> <span class="type">Proxy</span> {
+    <span class="keyword">address</span> <span class="keyword">public</span> owner;
+    <span class="keyword">uint</span> <span class="keyword">public</span> funds;
+    
+    <span class="keyword">fallback</span>() <span class="keyword">external</span> <span class="keyword">payable</span> {
+        <span class="comment">// VULNERABLE: Delegatecall to user-provided address</span>
+        (bool success, ) = msg.sender.<span class="function">delegatecall</span>(msg.data);
+        <span class="keyword">require</span>(success);
+    }
+}
+
+<span class="comment">// Attacker provides malicious code that modifies owner/funds</span></pre>
+                    </div>
+                    
+                    <div class="fix-box">
+                        <h4>✅ Fix: Use trusted implementation addresses only</h4>
+                        <p>Store implementation address securely, never allow user to provide it.</p>
+                    </div>
+                </div>
+                
+                <!-- QUICK REFERENCE TABLE -->
+                <h3 style="margin-top: 40px;">Quick Reference: Top 10 Vulnerabilities</h3>
+                
+                <table class="comparison-table">
+                    <tr>
+                        <th>Vulnerability</th>
+                        <th>Severity</th>
+                        <th>Famous Hack</th>
+                        <th>Losses</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Reentrancy</strong></td>
+                        <td style="color: #FF1744; font-weight: bold;">CRITICAL</td>
+                        <td>The DAO (2016)</td>
+                        <td>$50M</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Integer Overflow</strong></td>
+                        <td style="color: #FF6F00; font-weight: bold;">HIGH</td>
+                        <td>BeautyChain (2018)</td>
+                        <td>$1B+ (token ruined)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Access Control</strong></td>
+                        <td style="color: #FF1744; font-weight: bold;">CRITICAL</td>
+                        <td>Parity Wallet (2017)</td>
+                        <td>$30M+</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Unchecked Calls</strong></td>
+                        <td style="color: #FF6F00; font-weight: bold;">HIGH</td>
+                        <td>Multiple</td>
+                        <td>Varies</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Delegatecall Abuse</strong></td>
+                        <td style="color: #FF1744; font-weight: bold;">CRITICAL</td>
+                        <td>Parity (2017)</td>
+                        <td>$30M+</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Front-Running</strong></td>
+                        <td style="color: #FF6F00; font-weight: bold;">HIGH</td>
+                        <td>Daily (MEV attacks)</td>
+                        <td>$100M+/year</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Logic Errors</strong></td>
+                        <td style="color: #FF6F00; font-weight: bold;">HIGH</td>
+                        <td>Multiple</td>
+                        <td>Varies</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Bad Randomness</strong></td>
+                        <td style="color: #FFC107; font-weight: bold;">MEDIUM</td>
+                        <td>Game contracts</td>
+                        <td>Varies</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Gas Limit DoS</strong></td>
+                        <td style="color: #FFC107; font-weight: bold;">MEDIUM</td>
+                        <td>Various</td>
+                        <td>Varies</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Timestamp Dependency</strong></td>
+                        <td style="color: #FFC107; font-weight: bold;">MEDIUM</td>
+                        <td>Various</td>
+                        <td>Varies</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <!-- Section 3: Professional Auditing -->
+            <div class="section">
+                <h2>🔍 Professional Smart Contract Auditing</h2>
+                
+                <h3>Auditing Methodology</h3>
+                
+                <div class="lab-exercise">
+                    <h4>Step-by-Step Audit Process</h4>
+                    <ol>
+                        <li><strong>Specification Review:</strong> Understand what the contract is supposed to do</li>
+                        <li><strong>Architecture Analysis:</strong> Check overall design and patterns</li>
+                        <li><strong>Code Review:</strong> Line-by-line analysis for known vulnerabilities</li>
+                        <li><strong>Automated Analysis:</strong> Run tools like Slither, Mythril</li>
+                        <li><strong>Testing:</strong> Write tests to verify security properties</li>
+                        <li><strong>Report Writing:</strong> Document all findings with severity levels</li>
+                        <li><strong>Remediation Review:</strong> Verify fixes address issues</li>
+                    </ol>
+                </div>
+                
+                <h3>Professional Auditing Tools</h3>
+                
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <h4>Slither</h4>
+                        <p><strong>Static Analysis Tool</strong> - Analyzes code without running it</p>
+                        <p>Finds 70+ vulnerability patterns automatically</p>
+                        <div class="tool-tag">Python</div>
+                        <div class="tool-tag">Fast</div>
+                        <div class="tool-tag">Free</div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <h4>Mythril</h4>
+                        <p><strong>Symbolic Execution Tool</strong> - Simulates all possible execution paths</p>
+                        <p>Finds logic errors and complex vulnerabilities</p>
+                        <div class="tool-tag">Advanced</div>
+                        <div class="tool-tag">Slower</div>
+                        <div class="tool-tag">Free</div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <h4>Manticore</h4>
+                        <p><strong>Dynamic Analysis</strong> - Executes code with symbolic values</p>
+                        <p>Finds edge cases and complex interactions</p>
+                        <div class="tool-tag">Deep Analysis</div>
+                        <div class="tool-tag">Complex</div>
+                        <div class="tool-tag">Free</div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <h4>OpenZeppelin Defender</h4>
+                        <p><strong>Professional Platform</strong> - Used by top auditors</p>
+                        <p>Automated + manual audit capabilities</p>
+                        <div class="tool-tag">Professional</div>
+                        <div class="tool-tag">$$$</div>
+                        <div class="tool-tag">Enterprise</div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <h4>Echidna</h4>
+                        <p><strong>Fuzzing Tool</strong> - Tests with random inputs</p>
+                        <p>Finds unexpected behavior and edge cases</p>
+                        <div class="tool-tag">Fuzzing</div>
+                        <div class="tool-tag">Property-based</div>
+                        <div class="tool-tag">Free</div>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <h4>Hardhat + Ethers.js</h4>
+                        <p><strong>Testing Framework</strong> - Write comprehensive test cases</p>
+                        <p>Simulate attacks and verify fixes</p>
+                        <div class="tool-tag">Testing</div>
+                        <div class="tool-tag">Essential</div>
+                        <div class="tool-tag">Free</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 50px;">Building an Automated Audit System</h3>
+                
+                <p>Professional auditors use automation to check basic issues, then focus manual audit on complex logic:</p>
+                
+                <div class="code-block">
+                    <div class="code-label">automated_auditor.py - Python audit framework</div>
+                    <pre><span class="keyword">import</span> subprocess
+<span class="keyword">import</span> json
+<span class="keyword">from</span> slither <span class="keyword">import</span> Slither
+
+<span class="keyword">class</span> <span class="type">SmartContractAuditor</span>:
+    <span class="keyword">def</span> <span class="function">audit_contract</span>(<span class="keyword">self</span>, contract_path):
+        <span class="comment"># Step 1: Run Slither static analysis</span>
+        slither = Slither(contract_path)
+        
+        findings = {
+            <span class="string">'critical'</span>: [],
+            <span class="string">'high'</span>: [],
+            <span class="string">'medium'</span>: [],
+            <span class="string">'low'</span>: []
+        }
+        
+        <span class="comment"># Check each detector in Slither</span>
+        <span class="keyword">for</span> detector <span class="keyword">in</span> slither.detectors:
+            results = detector.run()
+            
+            <span class="keyword">for</span> result <span class="keyword">in</span> results:
+                severity = result.get(<span class="string">'severity'</span>, <span class="string">'info'</span>)
+                findings[severity.lower()].append({
+                    <span class="string">'type'</span>: detector.DESCRIPTION,
+                    <span class="string">'location'</span>: result.get(<span class="string">'source_mapping'</span>),
+                    <span class="string">'details'</span>: result.get(<span class="string">'description'</span>)
+                })
+        
+        <span class="comment"># Step 2: Run Mythril for deeper analysis</span>
+        mythril_findings = <span class="keyword">self</span>.<span class="function">run_mythril</span>(contract_path)
+        findings[<span class="string">'critical'</span>].extend(mythril_findings)
+        
+        <span class="comment"># Step 3: Custom checks</span>
+        <span class="keyword">self</span>.<span class="function">check_access_control</span>(slither, findings)
+        <span class="keyword">self</span>.<span class="function">check_reentrancy</span>(slither, findings)
+        <span class="keyword">self</span>.<span class="function">check_gas_issues</span>(slither, findings)
+        
+        <span class="keyword">return</span> findings
+    
+    <span class="keyword">def</span> <span class="function">check_access_control</span>(<span class="keyword">self</span>, slither, findings):
+        <span class="comment"># Check for missing onlyOwner modifiers</span>
+        <span class="keyword">for</span> contract <span class="keyword">in</span> slither.contracts:
+            <span class="keyword">for</span> func <span class="keyword">in</span> contract.functions:
+                <span class="comment"># Flag functions that modify state without access control</span>
+                <span class="keyword">if</span> func.is_writing_to_state <span class="keyword">and</span> <span class="keyword">not</span> func.is_internal:
+                    <span class="keyword">if</span> <span class="keyword">not</span> <span class="keyword">self</span>.<span class="function">has_access_control</span>(func):
+                        findings[<span class="string">'high'</span>].append({
+                            <span class="string">'type'</span>: <span class="string">'Missing Access Control'</span>,
+                            <span class="string">'function'</span>: func.name,
+                            <span class="string">'severity'</span>: <span class="string">'HIGH'</span>
+                        })
+    
+    <span class="keyword">def</span> <span class="function">check_reentrancy</span>(<span class="keyword">self</span>, slither, findings):
+        <span class="comment"># Flag functions with external calls before state updates</span>
+        <span class="keyword">for</span> contract <span class="keyword">in</span> slither.contracts:
+            <span class="keyword">for</span> func <span class="keyword">in</span> contract.functions:
+                external_calls = func.external_calls_as_expressions
+                state_updates = func.state_variables_written
+                
+                <span class="keyword">if</span> external_calls <span class="keyword">and</span> state_updates:
+                    <span class="comment"># Check order: if external call before state update = reentrancy risk</span>
+                    findings[<span class="string">'critical'</span>].append({
+                        <span class="string">'type'</span>: <span class="string">'Potential Reentrancy'</span>,
+                        <span class="string">'function'</span>: func.name,
+                        <span class="string">'fix'</span>: <span class="string">'Use Checks-Effects-Interactions pattern'</span>
+                    })
+
+auditor = SmartContractAuditor()
+report = auditor.audit_contract(<span class="string">"contract.sol"</span>)
+<span class="keyword">print</span>(json.dumps(report, indent=<span class="number">2</span>))</pre>
+                </div>
+            </div>
+            
+            <!-- Section 4: Real-World Hacks -->
+            <div class="section">
+                <h2>💥 Real-World Hacks & Lessons Learned</h2>
+                
+                <div class="real-world-hack">
+                    <h4>🚀 The DAO Hack (June 2016) - $50 Million Loss</h4>
+                    <p>
+                        <strong>The Vulnerability:</strong> Reentrancy in the withdrawal function. 
+                        The contract sent ETH before updating balances.
+                    </p>
+                    <p>
+                        <strong>What Happened:</strong> Attacker drained 3.6M ETH (worth $50M at the time) 
+                        in a single recursive transaction.
+                    </p>
+                    <p>
+                        <strong>Lesson:</strong> Always use Checks-Effects-Interactions pattern. 
+                        This single vulnerability pattern has caused more damage than any other in blockchain history.
+                    </p>
+                </div>
+                
+                <div class="real-world-hack">
+                    <h4>🔐 Parity Wallet Hack (July 2017) - $30 Million Loss</h4>
+                    <p>
+                        <strong>The Vulnerability:</strong> Missing access control + delegatecall abuse. 
+                        The wallet's initialization function was public (should have been private).
+                    </p>
+                    <p>
+                        <strong>What Happened:</strong> Attacker called initWallet() and became the new owner, 
+                        then transferred all funds.
+                    </p>
+                    <p>
+                        <strong>Lesson:</strong> Always restrict initialization functions to internal/private. 
+                        Review each delegatecall carefully.
+                    </p>
+                </div>
+                
+                <div class="real-world-hack">
+                    <h4>📊 BeautyChain Token (2018) - Integer Overflow</h4>
+                    <p>
+                        <strong>The Vulnerability:</strong> Integer overflow in token transfer. 
+                        Attacker sent 999 quadrillion fake tokens to an exchange.
+                    </p>
+                    <p>
+                        <strong>What Happened:</strong> Token price dropped 99%+ in minutes. 
+                        The token never recovered.
+                    </p>
+                    <p>
+                        <strong>Lesson:</strong> Use Solidity 0.8+ which has built-in overflow protection. 
+                        Or use SafeMath library in older versions.
+                    </p>
+                </div>
+                
+                <div class="real-world-hack">
+                    <h4>💰 Curve Finance Hack (2023) - $61 Million Loss</h4>
+                    <p>
+                        <strong>The Vulnerability:</strong> Complex math error in stablecoin pricing. 
+                        The mathematical formulas had a subtle bug.
+                    </p>
+                    <p>
+                        <strong>What Happened:</strong> Attacker exploited the pricing error to drain liquidity pools.
+                    </p>
+                    <p>
+                        <strong>Lesson:</strong> Complex math must be reviewed by cryptography experts. 
+                        Test with edge cases and fuzzing.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Section 5: Lab Exercises -->
+            <div class="section">
+                <h2>🧪 Hands-On Lab Exercises</h2>
+                
+                <h3>Lab 1: Exploit The DAO Reentrancy Vulnerability</h3>
+                
+                <div class="lab-exercise">
+                    <h4>Objective:</h4>
+                    <p>Write exploit code that drains funds from a vulnerable contract using reentrancy.</p>
+                    <h4>Steps:</h4>
+                    <ol>
+                        <li>Deploy VulnerableBank contract to local Hardhat network</li>
+                        <li>Write Attacker contract with fallback() function</li>
+                        <li>Call withdraw() and trigger reentrancy</li>
+                        <li>Verify attacker drained the contract</li>
+                        <li>Fix the vulnerability using the fixes shown above</li>
+                        <li>Verify the fix prevents reentrancy</li>
+                    </ol>
+                    
+                    <div class="code-block" style="margin-top: 20px;">
+                        <div class="code-label">test_reentrancy.js - Using Hardhat/Ethers.js</div>
+                        <pre><span class="keyword">const</span> { expect } = require(<span class="string">"chai"</span>);
+
+describe(<span class="string">"Reentrancy Exploit"</span>, () => {
+    <span class="keyword">let</span> bank, attacker, owner;
+    
+    beforeEach(<span class="keyword">async</span> () => {
+        <span class="comment">// Deploy vulnerable bank</span>
+        Bank = <span class="keyword">await</span> ethers.getContractFactory(<span class="string">"VulnerableBank"</span>);
+        bank = <span class="keyword">await</span> Bank.deploy();
+        
+        <span class="comment">// Deploy attacker contract</span>
+        Attacker = <span class="keyword">await</span> ethers.getContractFactory(<span class="string">"Attacker"</span>);
+        attacker = <span class="keyword">await</span> Attacker.deploy(bank.address);
+    });
+    
+    it(<span class="string">"Should drain vulnerable bank via reentrancy"</span>, <span class="keyword">async</span> () => {
+        <span class="comment">// Deposit funds to bank</span>
+        <span class="keyword">await</span> bank.<span class="function">deposit</span>({
+            value: ethers.utils.parseEther(<span class="string">"1"</span>)
+        });
+        
+        <span class="comment">// Owner deposits 10 ETH to bank</span>
+        <span class="keyword">let</span> tx = <span class="keyword">await</span> owner.<span class="function">sendTransaction</span>({
+            to: bank.address,
+            value: ethers.utils.parseEther(<span class="string">"10"</span>)
+        });
+        <span class="keyword">await</span> tx.wait();
+        
+        <span class="comment">// Attacker exploits reentrancy</span>
+        tx = <span class="keyword">await</span> attacker.<span class="function">attack</span>();
+        <span class="keyword">await</span> tx.wait();
+        
+        <span class="comment">// Check if bank is drained</span>
+        <span class="keyword">let</span> balance = <span class="keyword">await</span> ethers.provider.<span class="function">getBalance</span>(
+            bank.address
+        );
+        
+        <span class="comment">// Bank should be empty or nearly empty</span>
+        expect(balance).to.equal(<span class="number">0</span>);
+    });
+});
+
+<span class="comment">// Run with: npx hardhat test</span></pre>
+                    </div>
+                </div>
+                
+                <h3>Lab 2: Audit a Real Contract</h3>
+                
+                <div class="lab-exercise">
+                    <h4>Objective:</h4>
+                    <p>Audit a simple but vulnerable contract and create a professional report.</p>
+                    <h4>Steps:</h4>
+                    <ol>
+                        <li>Download a contract from GitHub (e.g., a GitHub audit challenge)</li>
+                        <li>Run Slither: <code>slither contract.sol --json > findings.json</code></li>
+                        <li>Run Mythril: <code>myth analyze contract.sol</code></li>
+                        <li>Manually review the code for logic errors</li>
+                        <li>Create a report with findings, severity, and fixes</li>
+                        <li>Submit to OpenZeppelin audit challenges (earn reputation)</li>
+                    </ol>
+                </div>
+                
+                <h3>Lab 3: Build Your Own Audit Tool</h3>
+                
+                <div class="lab-exercise">
+                    <h4>Objective:</h4>
+                    <p>Create an automated audit tool that checks for top 5 vulnerabilities.</p>
+                    <h4>Implementation:</h4>
+                    <ol>
+                        <li>Parse Solidity contract using Python parser</li>
+                        <li>Check for reentrancy patterns</li>
+                        <li>Check for access control issues</li>
+                        <li>Check for integer overflow</li>
+                        <li>Check for unchecked external calls</li>
+                        <li>Generate HTML report with findings</li>
+                        <li>Integrate with GitHub Actions for CI/CD</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <!-- Section 6: Career Path -->
+            <div class="section">
+                <h2>💼 Career Path to $1M+ Blockchain Security Auditor</h2>
+                
+                <h3>What Auditors Earn (2024)</h3>
+                
+                <table class="comparison-table">
+                    <tr>
+                        <th>Role</th>
+                        <th>Experience</th>
+                        <th>Annual Salary (USD)</th>
+                        <th>Per Audit (USD)</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Junior Auditor</strong></td>
+                        <td>0-1 year</td>
+                        <td>$80K - $150K</td>
+                        <td>$5K - $15K</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Mid-Level Auditor</strong></td>
+                        <td>1-3 years</td>
+                        <td>$150K - $300K</td>
+                        <td>$15K - $50K</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Senior Auditor</strong></td>
+                        <td>3-5 years</td>
+                        <td>$300K - $500K</td>
+                        <td>$50K - $100K</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Expert/Principal</strong></td>
+                        <td>5+ years</td>
+                        <td>$500K - $1M+</td>
+                        <td>$100K - $500K+</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Freelance Auditor</strong></td>
+                        <td>Any (proven track record)</td>
+                        <td>$50K - $500K/project</td>
+                        <td>Varies ($5K - $500K)</td>
+                    </tr>
+                </table>
+                
+                <h3 style="margin-top: 40px;">12-Month Learning Path</h3>
+                
+                <div class="detail-item">
+                    <div class="detail-label">Month 1-2: Foundations</div>
+                    <div class="detail-content">
+                        <ul style="margin-left: 20px;">
+                            <li>Learn Solidity basics (CryptoZombies, Ethereum docs)</li>
+                            <li>Understand EVM and blockchain fundamentals</li>
+                            <li>Set up development environment (Hardhat, Ethers.js)</li>
+                            <li>Write 5 simple contracts</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">Month 3-4: Vulnerabilities</div>
+                    <div class="detail-content">
+                        <ul style="margin-left: 20px;">
+                            <li>Study top 15 vulnerabilities (this guide!)</li>
+                            <li>Write exploit code for each vulnerability</li>
+                            <li>Complete CTF challenges (Damn Vulnerable DeFi, Ethernaut)</li>
+                            <li>Read 5+ real audit reports</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">Month 5-6: Tools & Automation</div>
+                    <div class="detail-content">
+                        <ul style="margin-left: 20px;">
+                            <li>Master Slither, Mythril, Echidna</li>
+                            <li>Build your automated audit tool</li>
+                            <li>Learn to write property-based tests</li>
+                            <li>Set up CI/CD for contract auditing</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">Month 7-9: Real Audits</div>
+                    <div class="detail-content">
+                        <ul style="margin-left: 20px;">
+                            <li>Start with OpenZeppelin Code Arena (paid audits)</li>
+                            <li>Take on freelance audits on Fiverr/Upwork</li>
+                            <li>Audit 10-20 contracts (build portfolio)</li>
+                            <li>Create blog posts on vulnerabilities found</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">Month 10-12: Specialization</div>
+                    <div class="detail-content">
+                        <ul style="margin-left: 20px;">
+                            <li>Specialize in DEX/AMM security or NFT security</li>
+                            <li>Get hired by top audit firm or DeFi protocol</li>
+                            <li>Earn first $100K+ from auditing</li>
+                            <li>Build reputation as expert</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 40px;">Top Companies Hiring Blockchain Auditors</h3>
+                
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <h4>OpenZeppelin</h4>
+                        <p>Leading security firm. Audit thousands of contracts.</p>
+                        <p><strong>Hiring:</strong> Senior auditors, $300K+/year</p>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <h4>Trail of Bits</h4>
+                        <p>Top security firm. Focus on deep audits.</p>
+                        <p><strong>Hiring:</strong> Security researchers, $200K-400K</p>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <h4>Certora</h4>
+                        <p>Formal verification experts. Cutting edge.</p>
+                        <p><strong>Hiring:</strong> Verification engineers, $250K+</p>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <h4>Code4rena</h4>
+                        <p>Decentralized audit platform. Freelance work.</p>
+                        <p><strong>Earning:</strong> $5K-500K per contest</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section 7: Key Takeaways -->
+            <div class="section">
+                <h2>🎯 Key Takeaways</h2>
+                
+                <div class="key-takeaway">
+                    <p>
+                        <strong>1. Reentrancy is the #1 killer vulnerability.</strong><br>
+                        Caused $50M+ in losses. Always use Checks-Effects-Interactions pattern.
+                    </p>
+                </div>
+                
+                <div class="key-takeaway">
+                    <p>
+                        <strong>2. Automation + Manual Review = Perfect Audit.</strong><br>
+                        Use Slither/Mythril to catch basic issues. Manual review finds complex logic errors.
+                    </p>
+                </div>
+                
+                <div class="key-takeaway">
+                    <p>
+                        <strong>3. Access Control is Critical.</strong><br>
+                        Missing access control caused Parity hack ($30M). Always restrict sensitive functions.
+                    </p>
+                </div>
+                
+                <div class="key-takeaway">
+                    <p>
+                        <strong>4. Write Tests for Security Properties.</strong><br>
+                        Use fuzzing (Echidna) and property-based testing to find edge cases.
+                    </p>
+                </div>
+                
+                <div class="key-takeaway">
+                    <p>
+                        <strong>5. $1M+ Earning Potential Exists.</strong><br>
+                        Only ~100 expert auditors in the world. High demand = premium salaries.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <h3>🚀 You Now Have Everything to Become a Professional Smart Contract Auditor</h3>
+            <p>
+                This guide contains knowledge that would cost $50K+ in paid courses, 
+                distilled into actionable expertise.
+            </p>
+            <p style="margin-top: 20px;">
+                <strong>Next Steps:</strong>
+            </p>
+            <ol style="text-align: left; display: inline-block;">
+                <li>Complete at least one lab exercise today</li>
+                <li>Practice exploiting the 3 vulnerabilities</li>
+                <li>Audit your first contract this month</li>
+                <li>Earn your first $5K+ from auditing</li>
+            </ol>
+            <p style="margin-top: 30px; font-weight: bold; color: #FFD700;">
+                Welcome to blockchain security. The future is built on secure code.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
