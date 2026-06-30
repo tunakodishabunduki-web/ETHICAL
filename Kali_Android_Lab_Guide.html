@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kali + Android Lab Guide: Frida & APK Modification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            line-height: 1.8;
+            color: #00ff00;
+            background: #0a0e27;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #111;
+            border: 3px solid #00ff00;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            border-bottom: 3px solid #00ff00;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #00ff00;
+            font-size: 2.8em;
+            text-shadow: 0 0 10px #00ff00;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #00ff00;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            border-left: 4px solid #00ff00;
+            padding-left: 20px;
+        }
+        
+        .section h2 {
+            color: #00ff00;
+            font-size: 2em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 5px #00ff00;
+        }
+        
+        .section h3 {
+            color: #00ff00;
+            font-size: 1.5em;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 10px;
+        }
+        
+        .command-block {
+            background: #000;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-size: 0.95em;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+        }
+        
+        .command-block code {
+            color: #00ff00;
+            word-wrap: break-word;
+        }
+        
+        .output {
+            background: #0a0e27;
+            border: 1px solid #00ff00;
+            border-left: 4px solid #00ff00;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 3px;
+        }
+        
+        .success {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        
+        .error {
+            color: #ff0000;
+        }
+        
+        .warning {
+            color: #ffff00;
+        }
+        
+        .info {
+            color: #00ccff;
+        }
+        
+        .step {
+            background: #1a1f3a;
+            border-left: 4px solid #00ff00;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .step-num {
+            color: #00ff00;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        
+        .lab-exercise {
+            background: #0a1a0a;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .lab-exercise h4 {
+            color: #00ff00;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .checklist {
+            list-style: none;
+            margin-left: 20px;
+        }
+        
+        .checklist li {
+            margin-bottom: 10px;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .checklist li::before {
+            content: "[ ]";
+            position: absolute;
+            left: 0;
+            color: #00ff00;
+            font-weight: bold;
+        }
+        
+        .checklist li.done::before {
+            content: "[✓]";
+        }
+        
+        .code-label {
+            color: #00ccff;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .arrow {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border: 2px solid #00ff00;
+        }
+        
+        .table th {
+            background: #0a0e27;
+            color: #00ff00;
+            padding: 15px;
+            text-align: left;
+            border-bottom: 2px solid #00ff00;
+            font-weight: bold;
+        }
+        
+        .table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #00ff00;
+        }
+        
+        .table tr:nth-child(even) {
+            background: #0a1a0a;
+        }
+        
+        .footer {
+            background: #0a0e27;
+            border-top: 3px solid #00ff00;
+            padding: 30px;
+            text-align: center;
+            color: #00ff00;
+        }
+        
+        .highlight {
+            background: #00ff00;
+            color: #000;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        
+        .tip {
+            background: #0a2a0a;
+            border-left: 4px solid #00ff00;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 3px;
+        }
+        
+        .tip::before {
+            content: "💡 TIP: ";
+            color: #00ff00;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .command-block {
+                font-size: 0.85em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔥 KALI + ANDROID LAB GUIDE 🔥</h1>
+            <p>Professional Android Security Testing with Frida & APK Modification</p>
+            <p style="margin-top: 15px; font-size: 0.95em;">
+                Complete Hands-On Lab for Penetration Testers
+            </p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Section 1: Lab Setup -->
+            <div class="section">
+                <h2>⚙️ LAB SETUP: Prerequisites & Installation</h2>
+                
+                <h3>What You Need:</h3>
+                <ul style="margin-left: 20px; line-height: 2;">
+                    <li>✅ Kali Linux (VM or native)</li>
+                    <li>✅ Android phone (rooted recommended, non-rooted works too)</li>
+                    <li>✅ USB cable (USB debugging enabled)</li>
+                    <li>✅ ~5GB disk space</li>
+                </ul>
+                
+                <h3>Step 1: Enable ADB on Android Phone</h3>
+                
+                <div class="step">
+                    <div class="step-num">PHONE SETUP:</div>
+                    <ol style="margin-left: 20px; line-height: 2;">
+                        <li>Settings → About phone → Build number</li>
+                        <li>Tap "Build number" 7 times (until "Developer mode enabled")</li>
+                        <li>Back to Settings → Developer options</li>
+                        <li>Enable "USB debugging"</li>
+                        <li>Enable "Wireless debugging" (optional, for network testing)</li>
+                        <li>Connect phone to Kali with USB cable</li>
+                    </ol>
+                </div>
+                
+                <h3>Step 2: Install Kali Requirements</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">$ Install Android SDK Tools on Kali</div>
+                    <code>
+# Update Kali
+sudo apt-get update && sudo apt-get upgrade -y
+
+# Install ADB and Fastboot
+sudo apt-get install -y android-sdk-platform-tools android-sdk-build-tools
+
+# Install Frida
+pip install frida frida-tools
+
+# Install other essential tools
+sudo apt-get install -y \
+    openjdk-11-jdk \
+    python3-dev \
+    build-essential \
+    git \
+    unzip \
+    wget
+
+# Verify installations
+adb version
+frida --version
+                    </code>
+                </div>
+                
+                <div class="output">
+                    <span class="success">✓ Output should show:</span><br>
+                    <code>
+Android Debug Bridge version 1.0.41
+frida 16.0.8
+                    </code>
+                </div>
+                
+                <h3>Step 3: Connect Phone to Kali</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">$ Connect and authorize phone</div>
+                    <code>
+# List connected devices
+adb devices
+
+# First time, phone will ask permission - TAP ALLOW
+
+# Verify connection
+adb devices -l
+
+# Get device info
+adb shell getprop ro.build.version.release
+
+# Restart ADB as root (for some operations)
+adb root
+adb shell
+                    </code>
+                </div>
+                
+                <div class="output">
+                    <span class="success">✓ Expected output:</span><br>
+                    <code>
+List of attached devices
+emulator-5554          device usb:1-2.1 product:phone model:OnePlus device:OnePlus
+                    </code>
+                </div>
+            </div>
+            
+            <!-- Section 2: Frida Setup -->
+            <div class="section">
+                <h2>🎣 FRIDA: Runtime Function Hooking (NO APK RECOMPILATION!)</h2>
+                
+                <p style="margin-bottom: 15px;">
+                    <span class="highlight">Frida</span> lets you intercept and modify app behavior <span class="highlight">at runtime</span> 
+                    without touching the APK. This is the professional way to test security.
+                </p>
+                
+                <h3>Step 1: Install Frida Server on Phone</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">$ Install Frida server</div>
+                    <code>
+# Check your phone architecture
+adb shell getprop ro.product.cpu.abi
+
+# Download appropriate Frida server
+# For ARM64 (most modern phones):
+wget https://github.com/frida/frida/releases/download/16.0.8/frida-server-16.0.8-android-arm64.xz
+
+# For ARM (older phones):
+# wget https://github.com/frida/frida/releases/download/16.0.8/frida-server-16.0.8-android-arm.xz
+
+# Extract
+unxz frida-server-16.0.8-android-arm64.xz
+
+# Push to phone
+adb push frida-server-16.0.8-android-arm64 /data/local/tmp/frida-server
+
+# Make executable
+adb shell chmod +x /data/local/tmp/frida-server
+
+# Run Frida server (in background)
+adb shell "/data/local/tmp/frida-server &"
+
+# Verify it's running
+adb shell ps | grep frida
+                    </code>
+                </div>
+                
+                <div class="output">
+                    <span class="success">✓ You should see frida-server in process list</span>
+                </div>
+                
+                <h3>Step 2: List Running Apps</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">$ List all running apps</div>
+                    <code>
+# From Kali, list all apps on phone
+frida-ps -U
+
+# Or list specific app
+frida-ps -U | grep instagram
+
+# Get package name
+adb shell pm list packages | grep -i app_name
+                    </code>
+                </div>
+                
+                <div class="output">
+                    <span class="success">✓ Output shows:</span><br>
+                    <code>
+PID   NAME              IDENTIFIER
+1234  Instagram         com.instagram.android
+5678  WhatsApp          com.whatsapp
+                    </code>
+                </div>
+                
+                <h3>Step 3: Write Your First Frida Hook</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">hook_example.js - Simple function interception</div>
+                    <code>
+<span class="info">// Hook Activity lifecycle</span>
+Java.perform(function() {
+    var Activity = Java.use("android.app.Activity");
+    
+    Activity.onCreate.implementation = function(savedInstanceState) {
+        console.log("<span class="success">[*] Activity.onCreate called!</span>");
+        return this.onCreate(savedInstanceState);
+    };
+    
+    Activity.onResume.implementation = function() {
+        console.log("<span class="success">[*] Activity.onResume called!</span>");
+        return this.onResume();
+    };
+});
+
+<span class="info">// Hook SharedPreferences (read stored data)</span>
+Java.perform(function() {
+    var SharedPreferences = Java.use("android.content.SharedPreferences");
+    
+    SharedPreferences.getString.implementation = function(key, defValue) {
+        var result = this.getString(key, defValue);
+        console.log("<span class="success">[+] SharedPref read - Key:</span> " + key + " <span class="success">Value:</span> " + result);
+        return result;
+    };
+});
+
+<span class="info">// Hook MessageDigest (intercept hashing)</span>
+Java.perform(function() {
+    var MessageDigest = Java.use("java.security.MessageDigest");
+    
+    MessageDigest.getInstance.implementation = function(algorithm) {
+        console.log("<span class="success">[!] Hashing algorithm used:</span> " + algorithm);
+        return this.getInstance(algorithm);
+    };
+});
+                    </code>
+                </div>
+                
+                <h3>Step 4: Launch Frida Hook</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">$ Attach Frida to running app</div>
+                    <code>
+# Option 1: Hook running app
+frida -U -p PID -l hook_example.js
+
+# Option 2: Launch app and hook it
+frida -U -f com.target.app -l hook_example.js --no-pause
+
+# Option 3: Spawn app with hook
+frida -U -f com.whatsapp -l hook_example.js
+
+# -U = Use device (USB)
+# -f = Spawn and attach to app
+# -l = Load JavaScript hook
+# --no-pause = Don't pause on startup
+                    </code>
+                </div>
+                
+                <div class="output">
+                    <span class="success">✓ Output shows hook working:</span><br>
+                    <code>
+[*] Activity.onCreate called!
+[*] Activity.onResume called!
+[+] SharedPref read - Key: username Value: john123
+[!] Hashing algorithm used: SHA-256
+                    </code>
+                </div>
+            </div>
+            
+            <!-- Section 3: Advanced Frida -->
+            <div class="section">
+                <h2>🎯 ADVANCED FRIDA TECHNIQUES</h2>
+                
+                <h3>Technique 1: Bypass Certificate Pinning</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">bypass_certificate_pinning.js</div>
+                    <code>
+<span class="info">// Bypass SSL/TLS certificate pinning</span>
+Java.perform(function() {
+    var X509TrustManager = Java.use("javax.net.ssl.X509TrustManager");
+    var TrustManager = Java.registerClass({
+        name: "TrustManager",
+        implements: [X509TrustManager],
+        methods: {
+            checkClientTrusted: function(certs, authType) {},
+            checkServerTrusted: function(certs, authType) {},
+            getAcceptedIssuers: function() {
+                return [];
+            }
+        }
+    });
+    
+    var sslContext = Java.use("javax.net.ssl.SSLContext");
+    sslContext.init.overload(
+        "[Ljavax/net/ssl/KeyManager;",
+        "[Ljavax/net/ssl/TrustManager;",
+        "Ljava/security/SecureRandom;"
+    ).implementation = function(keyManagers, trustManagers, secureRandom) {
+        console.log("<span class="success">[!] Certificate pinning bypassed!</span>");
+        return this.init(keyManagers, [new TrustManager()], secureRandom);
+    };
+});
+
+<span class="info">// Alternative: Hook OkHttp certificate pinning</span>
+Java.perform(function() {
+    var CertificatePinner = Java.use("okhttp3.CertificatePinner");
+    
+    CertificatePinner.check.overload("java.lang.String", "java.util.List").implementation = function(hostname, list) {
+        console.log("<span class="success">[+] Certificate pinning check for:</span> " + hostname);
+        <span class="info">// Don't verify, just return</span>
+        return;
+    };
+});
+                    </code>
+                </div>
+                
+                <h3>Technique 2: Extract Stored Credentials</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">extract_credentials.js</div>
+                    <code>
+<span class="info">// Hook SharedPreferences to extract all data</span>
+Java.perform(function() {
+    var SharedPreferences = Java.use("android.content.SharedPreferences$Editor");
+    
+    SharedPreferences.putString.implementation = function(key, value) {
+        console.log("<span class="success">[+] Storing credential -</span> " + key + ": " + value);
+        return this.putString(key, value);
+    };
+    
+    <span class="info">// Also intercept reads</span>
+    var SP = Java.use("android.content.SharedPreferences");
+    SP.getString.implementation = function(key, defValue) {
+        var value = this.getString(key, defValue);
+        if (value && value.length > 0) {
+            console.log("<span class="success">[*] Read from SharedPrefs -</span> " + key + ": " + value);
+        }
+        return value;
+    };
+});
+
+<span class="info">// Hook SQLite database access</span>
+Java.perform(function() {
+    var SQLiteDatabase = Java.use("android.database.sqlite.SQLiteDatabase");
+    
+    SQLiteDatabase.query.overload("java.lang.String", "[Ljava/lang/String;", "java.lang.String", "[Ljava/lang/String;", "java.lang.String", "java.lang.String", "java.lang.String").implementation = function(table, columns, selection, selectionArgs, groupBy, having, orderBy) {
+        console.log("<span class="success">[+] SQLite Query on table:</span> " + table);
+        return this.query(table, columns, selection, selectionArgs, groupBy, having, orderBy);
+    };
+});
+                    </code>
+                </div>
+                
+                <h3>Technique 3: Intercept Network Requests</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">intercept_network.js</div>
+                    <code>
+<span class="info">// Hook HttpURLConnection</span>
+Java.perform(function() {
+    var HttpURLConnection = Java.use("java.net.HttpURLConnection");
+    
+    HttpURLConnection.getInputStream.implementation = function() {
+        console.log("<span class="success">[+] HTTP Request to:</span> " + this.getURL());
+        console.log("<span class="success">Headers:</span> " + JSON.stringify(this.getHeaderFields()));
+        return this.getInputStream();
+    };
+});
+
+<span class="info">// Hook OkHttp requests</span>
+Java.perform(function() {
+    var Interceptor = Java.use("okhttp3.Interceptor");
+    var Request = Java.use("okhttp3.Request");
+    
+    var chain = Java.cast(Java.use("okhttp3.Interceptor$Chain").getInstance(), Java.use("okhttp3.Interceptor"));
+    
+    var response = chain.proceed(request);
+    console.log("<span class="success">[+] OkHttp Request:</span> " + request.url());
+    console.log("<span class="success">Response Status:</span> " + response.code());
+    return response;
+});
+                    </code>
+                </div>
+                
+                <h3>Technique 4: Modify App Behavior</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">modify_behavior.js</div>
+                    <code>
+<span class="info">// Bypass authentication check</span>
+Java.perform(function() {
+    var LoginActivity = Java.use("com.example.app.LoginActivity");
+    
+    LoginActivity.isAuthenticated.implementation = function() {
+        console.log("<span class="success">[!] isAuthenticated hooked - returning TRUE</span>");
+        return true; <span class="info">// Always return true</span>
+    };
+});
+
+<span class="info">// Force app to think user has premium subscription</span>
+Java.perform(function() {
+    var User = Java.use("com.example.app.User");
+    
+    User.isPremium.implementation = function() {
+        console.log("<span class="success">[!] isPremium hooked - returning TRUE</span>");
+        return true;
+    };
+});
+
+<span class="info">// Modify version checks</span>
+Java.perform(function() {
+    var BuildConfig = Java.use("com.example.app.BuildConfig");
+    var newBuildConfig = Java.cast(BuildConfig, Java.use("java.lang.Object"));
+    
+    BuildConfig.VERSION_CODE.value = 999999;
+    BuildConfig.VERSION_NAME.value = "99.99.99";
+    console.log("<span class="success">[!] Version spoofed</span>");
+});
+                    </code>
+                </div>
+                
+                <h3>Step 5: Run Advanced Hooks</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">$ Launch with advanced hooks</div>
+                    <code>
+# Bypass certificate pinning
+frida -U -f com.instagram.android -l bypass_certificate_pinning.js --no-pause
+
+# Extract credentials
+frida -U -f com.app.name -l extract_credentials.js --no-pause
+
+# Intercept network
+frida -U -f com.app.name -l intercept_network.js --no-pause
+
+# Modify behavior
+frida -U -f com.app.name -l modify_behavior.js --no-pause
+
+# Use multiple hooks at once
+frida -U -f com.app.name \
+    -l hook1.js \
+    -l hook2.js \
+    -l hook3.js \
+    --no-pause
+                    </code>
+                </div>
+            </div>
+            
+            <!-- Section 4: Manual APK Modification -->
+            <div class="section">
+                <h2>📦 MANUAL APK MODIFICATION (Extract, Modify, Rebuild)</h2>
+                
+                <h3>Overview</h3>
+                <p>
+                    When you need to <span class="highlight">permanently modify</span> an app (not just runtime), 
+                    extract it, modify files, repack, sign, align, and install.
+                </p>
+                
+                <h3>Step 1: Extract APK</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">$ Extract APK to work directory</div>
+                    <code>
+# Get APK from phone
+adb shell pm path com.target.app
+
+# Example output:
+# package:/data/app/com.target.app-abc123/base.apk
+
+adb pull /data/app/com.target.app-abc123/base.apk ./target.apk
+
+# Or pull from any installed app:
+adb pull $(adb shell pm path com.target.app | cut -d : -f 2) target.apk
+
+# Create work directory
+mkdir apk_work
+cd apk_work
+
+# Extract APK (it's just a ZIP file!)
+unzip -q ../target.apk
+
+# List contents
+ls -la
+
+# You can now edit:
+# - res/values/strings.xml (text resources)
+# - assets/* (any static files)
+# - AndroidManifest.xml (app configuration)
+# - smali/* (bytecode - advanced users)
+                    </code>
+                </div>
+                
+                <div class="output">
+                    <span class="success">✓ Contents of APK:</span><br>
+                    <code>
+AndroidManifest.xml
+classes.dex
+resources.arsc
+res/
+assets/
+lib/
+META-INF/
+                    </code>
+                </div>
+                
+                <h3>Step 2: Modify Files (Examples)</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">$ Modify app strings</div>
+                    <code>
+cd apk_work
+
+# Edit string resources
+nano res/values/strings.xml
+
+# Change app name
+sed -i 's/Original App Name/Modified App/g' res/values/strings.xml
+
+# Change version string
+sed -i 's/Version 1.0/Version 1.0 (Modified)/g' res/values/strings.xml
+
+# Add debug message
+echo '<string name="debug_mode">TRUE</string>' >> res/values/strings.xml
+
+# Modify AndroidManifest to disable certificate pinning
+sed -i 's/android:usesCleartextTraffic="false"/android:usesCleartextTraffic="true"/g' AndroidManifest.xml
+
+# Or create cleartext config
+cat > res/xml/network_security_config.xml << 'EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">example.com</domain>
+    </domain-config>
+</network-security-config>
+EOF
+                    </code>
+                </div>
+                
+                <h3>Step 3: Repack APK</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">$ Repack modified files into APK</div>
+                    <code>
+cd apk_work
+
+# Create new APK from modified files
+zip -r ../app-modified.apk * -q
+
+cd ..
+
+# Verify new APK
+ls -lh app-modified.apk
+
+# Check contents
+unzip -l app-modified.apk | head -20
+                    </code>
+                </div>
+                
+                <h3>Step 4: Sign APK</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">$ Create keystore and sign</div>
+                    <code>
+# Create keystore (first time only)
+keytool -genkey -v -keystore ~/.keystore \
+    -keyalg RSA -keysize 2048 -validity 10000 \
+    -alias my_key \
+    -storepass password \
+    -keypass password \
+    -dname "CN=MyApp, O=MyOrg, C=US"
+
+# Sign the APK
+jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA256 \
+    -keystore ~/.keystore \
+    -storepass password \
+    -keypass password \
+    app-modified.apk my_key
+
+# Verify signature
+jarsigner -verify -verbose -certs app-modified.apk
+                    </code>
+                </div>
+                
+                <h3>Step 5: Align APK (CRITICAL!)</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">$ Align APK for optimal performance</div>
+                    <code>
+# This step is ESSENTIAL - fixes most installation errors!
+zipalign -v 4 app-modified.apk app-final.apk
+
+# Verify alignment
+zipalign -c -v 4 app-final.apk
+
+# Verify signature again after alignment
+jarsigner -verify -verbose -certs app-final.apk
+                    </code>
+                </div>
+                
+                <div class="output">
+                    <span class="success">✓ Alignment verification output:</span><br>
+                    <code>
+4-byte alignment: OK
+Signature: OK
+                    </code>
+                </div>
+                
+                <h3>Step 6: Install on Phone</h3>
+                
+                <div class="command-block">
+                    <div class="code-label">$ Uninstall old version and install modified</div>
+                    <code>
+# Uninstall original app
+adb uninstall com.target.app
+
+# Install modified APK
+adb install -r app-final.apk
+
+# Verify installation
+adb shell pm list packages | grep target.app
+
+# Launch app
+adb shell am start -n com.target.app/.MainActivity
+
+# View app logs
+adb logcat | grep "target.app"
+                    </code>
+                </div>
+            </div>
+            
+            <!-- Section 5: Complete Lab Script -->
+            <div class="section">
+                <h2>🚀 COMPLETE AUTOMATION SCRIPT</h2>
+                
+                <p>Here's a professional script that automates everything:</p>
+                
+                <div class="command-block">
+                    <div class="code-label">complete_lab.sh - Full automation</div>
+                    <code>
+#!/bin/bash
+
+<span class="info"># Colors for output</span>
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' <span class="info"># No Color</span>
+
+echo -e "${BLUE}═══════════════════════════════════════${NC}"
+echo -e "${BLUE}  KALI + ANDROID LAB AUTOMATION${NC}"
+echo -e "${BLUE}═══════════════════════════════════════${NC}"
+
+<span class="info"># Check prerequisites</span>
+echo -e "${YELLOW}[*] Checking prerequisites...${NC}"
+
+if ! command -v adb &> /dev/null; then
+    echo -e "${RED}[!] ADB not found. Installing...${NC}"
+    sudo apt-get install -y android-sdk-platform-tools
+fi
+
+if ! command -v frida &> /dev/null; then
+    echo -e "${RED}[!] Frida not found. Installing...${NC}"
+    pip install frida frida-tools
+fi
+
+<span class="info"># Function: List devices</span>
+list_devices() {
+    echo -e "${YELLOW}[*] Connected devices:${NC}"
+    adb devices -l
+}
+
+<span class="info"># Function: Install Frida server</span>
+install_frida_server() {
+    echo -e "${YELLOW}[*] Installing Frida server on phone...${NC}"
+    
+    ARCH=$(adb shell getprop ro.product.cpu.abi)
+    echo -e "${GREEN}[+] Phone architecture: $ARCH${NC}"
+    
+    if [[ "$ARCH" == "arm64-v8a" ]]; then
+        FRIDA_FILE="frida-server-16.0.8-android-arm64.xz"
+        FRIDA_URL="https://github.com/frida/frida/releases/download/16.0.8/$FRIDA_FILE"
+    else
+        FRIDA_FILE="frida-server-16.0.8-android-arm.xz"
+        FRIDA_URL="https://github.com/frida/frida/releases/download/16.0.8/$FRIDA_FILE"
+    fi
+    
+    wget -q "$FRIDA_URL" -O "$FRIDA_FILE"
+    unxz "$FRIDA_FILE"
+    
+    FRIDA_SERVER="${FRIDA_FILE%.xz}"
+    adb push "$FRIDA_SERVER" /data/local/tmp/frida-server
+    adb shell chmod +x /data/local/tmp/frida-server
+    adb shell "/data/local/tmp/frida-server &"
+    
+    echo -e "${GREEN}[✓] Frida server installed and running${NC}"
+}
+
+<span class="info"># Function: Extract APK</span>
+extract_apk() {
+    local PACKAGE="$1"
+    echo -e "${YELLOW}[*] Extracting APK for $PACKAGE...${NC}"
+    
+    local APK_PATH=$(adb shell pm path "$PACKAGE" | cut -d : -f 2)
+    adb pull "$APK_PATH" "$PACKAGE.apk"
+    
+    mkdir -p "$PACKAGE/apk_work"
+    cd "$PACKAGE/apk_work"
+    unzip -q ../"$PACKAGE".apk
+    
+    echo -e "${GREEN}[✓] APK extracted to $PACKAGE/apk_work${NC}"
+}
+
+<span class="info"># Function: Repack APK</span>
+repack_apk() {
+    local PACKAGE="$1"
+    echo -e "${YELLOW}[*] Repacking APK...${NC}"
+    
+    cd "$PACKAGE/apk_work"
+    zip -r ../"$PACKAGE-modified.apk" * -q
+    cd ../..
+    
+    echo -e "${GREEN}[✓] Repacked to $PACKAGE-modified.apk${NC}"
+}
+
+<span class="info"># Function: Sign APK</span>
+sign_apk() {
+    local APK_FILE="$1"
+    echo -e "${YELLOW}[*] Signing APK...${NC}"
+    
+    <span class="info"># Create keystore if not exists</span>
+    if [ ! -f ~/.keystore ]; then
+        keytool -genkey -v -keystore ~/.keystore \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -alias my_key -storepass password -keypass password \
+            -dname "CN=MyApp, O=MyOrg, C=US" > /dev/null 2>&1
+    fi
+    
+    jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA256 \
+        -keystore ~/.keystore -storepass password -keypass password \
+        "$APK_FILE" my_key > /dev/null 2>&1
+    
+    echo -e "${GREEN}[✓] APK signed${NC}"
+}
+
+<span class="info"># Function: Align APK</span>
+align_apk() {
+    local INPUT="$1"
+    local OUTPUT="${INPUT%.apk}-aligned.apk"
+    
+    echo -e "${YELLOW}[*] Aligning APK...${NC}"
+    zipalign -v 4 "$INPUT" "$OUTPUT" > /dev/null
+    mv "$OUTPUT" "$INPUT"
+    
+    echo -e "${GREEN}[✓] APK aligned${NC}"
+}
+
+<span class="info"># Function: Install APK</span>
+install_apk() {
+    local APK_FILE="$1"
+    echo -e "${YELLOW}[*] Installing APK...${NC}"
+    adb install -r "$APK_FILE"
+    echo -e "${GREEN}[✓] Installation complete${NC}"
+}
+
+<span class="info"># Main menu</span>
+while true; do
+    echo -e ""
+    echo -e "${BLUE}Select option:${NC}"
+    echo "1. List connected devices"
+    echo "2. Install Frida server"
+    echo "3. List running apps"
+    echo "4. Extract APK (by package name)"
+    echo "5. Repack modified APK"
+    echo "6. Sign APK"
+    echo "7. Align APK"
+    echo "8. Full workflow (extract→sign→align→install)"
+    echo "9. Run Frida hook"
+    echo "0. Exit"
+    read -p "Choice: " choice
+    
+    case $choice in
+        1) list_devices ;;
+        2) install_frida_server ;;
+        3) frida-ps -U ;;
+        4) 
+            read -p "Package name: " pkg
+            extract_apk "$pkg"
+            ;;
+        5)
+            read -p "Package name: " pkg
+            repack_apk "$pkg"
+            ;;
+        6)
+            read -p "APK file: " apk
+            sign_apk "$apk"
+            ;;
+        7)
+            read -p "APK file: " apk
+            align_apk "$apk"
+            ;;
+        8)
+            read -p "Package name: " pkg
+            extract_apk "$pkg"
+            repack_apk "$pkg"
+            sign_apk "$pkg-modified.apk"
+            align_apk "$pkg-modified.apk"
+            install_apk "$pkg-modified.apk"
+            ;;
+        9)
+            read -p "Hook file: " hook
+            read -p "Package name: " pkg
+            frida -U -f "$pkg" -l "$hook" --no-pause
+            ;;
+        0) exit 0 ;;
+        *) echo -e "${RED}Invalid choice${NC}" ;;
+    esac
+done
+                    </code>
+                </div>
+                
+                <div class="command-block">
+                    <div class="code-label">$ Run the script</div>
+                    <code>
+chmod +x complete_lab.sh
+./complete_lab.sh
+
+<span class="info"># Or run individual commands:</span>
+./complete_lab.sh 2  <span class="info"># Install Frida</span>
+./complete_lab.sh 3  <span class="info"># List apps</span>
+                    </code>
+                </div>
+            </div>
+            
+            <!-- Section 6: Lab Exercises -->
+            <div class="section">
+                <h2>🧪 HANDS-ON LAB EXERCISES</h2>
+                
+                <div class="lab-exercise">
+                    <h4>LAB 1: Intercept WhatsApp Messages (Frida)</h4>
+                    
+                    <p><strong>Objective:</strong> Use Frida to hook and log all message operations</p>
+                    
+                    <div class="command-block">
+                        <div class="code-label">whatsapp_hook.js</div>
+                        <code>
+Java.perform(function() {
+    <span class="info">// Hook message sending</span>
+    var Message = Java.use("com.whatsapp.Message");
+    
+    Message.getBody.implementation = function() {
+        var message = this.getBody();
+        console.log("<span class="success">[+] Message content:</span> " + message);
+        return message;
+    };
+    
+    <span class="info">// Hook message recipient</span>
+    Message.getKey.implementation = function() {
+        var key = this.getKey();
+        console.log("<span class="success">[+] Message recipient:</span> " + key);
+        return key;
+    };
+});
+                        </code>
+                    </div>
+                    
+                    <p><strong>Steps:</strong></p>
+                    <ol style="margin-left: 20px; line-height: 2;">
+                        <li>Save hook as <code>whatsapp_hook.js</code></li>
+                        <li><code>frida -U -f com.whatsapp -l whatsapp_hook.js --no-pause</code></li>
+                        <li>Send a message in WhatsApp</li>
+                        <li>Watch console for intercepted messages</li>
+                    </ol>
+                </div>
+                
+                <div class="lab-exercise">
+                    <h4>LAB 2: Bypass Instagram Login (Manual APK Mod)</h4>
+                    
+                    <p><strong>Objective:</strong> Modify Instagram APK to skip login screen</strong></p>
+                    
+                    <p><strong>Steps:</strong></p>
+                    <ul style="margin-left: 20px; line-height: 2;">
+                        <li>Extract Instagram APK: <code>adb pull $(adb shell pm path com.instagram.android | cut -d : -f 2) instagram.apk</code></li>
+                        <li><code>mkdir work && cd work && unzip -q ../instagram.apk</code></li>
+                        <li>Find login logic in <code>smali/com/instagram/</code> (advanced)</li>
+                        <li>Or modify AndroidManifest.xml to change default launch activity</li>
+                        <li>Repack, sign, align, install</li>
+                    </ul>
+                </div>
+                
+                <div class="lab-exercise">
+                    <h4>LAB 3: Bypass Certificate Pinning (Frida)</h4>
+                    
+                    <p><strong>Objective:</strong> Use MITM proxy to intercept HTTPS traffic</p>
+                    
+                    <p><strong>Steps:</strong></p>
+                    <ul style="margin-left: 20px; line-height: 2;">
+                        <li>Use <code>bypass_certificate_pinning.js</code> from earlier</li>
+                        <li><code>frida -U -f com.app -l bypass_certificate_pinning.js --no-pause</code></li>
+                        <li>Setup mitmproxy on Kali: <code>mitmproxy -p 8080</code></li>
+                        <li>Redirect traffic through proxy</li>
+                        <li>Monitor intercepted HTTPS requests</li>
+                    </ul>
+                </div>
+                
+                <div class="lab-exercise">
+                    <h4>LAB 4: Extract Stored Credentials (Frida + ADB)</h4>
+                    
+                    <p><strong>Objective:</strong> Pull cached credentials from phone storage</p>
+                    
+                    <div class="command-block">
+                        <div class="code-label">$ Extract credentials from SharedPreferences</div>
+                        <code>
+# Get app data directory
+adb shell find /data/data/com.app.name -type f -name "shared_prefs" 2>/dev/null
+
+# Pull SharedPreferences XML
+adb pull /data/data/com.app.name/shared_prefs/
+
+# View stored data (often plaintext!)
+cat shared_prefs/*.xml | grep -i password
+cat shared_prefs/*.xml | grep -i token
+cat shared_prefs/*.xml | grep -i auth
+
+# Also check SQLite databases
+adb shell find /data/data/com.app.name -name "*.db" -o -name "*.sqlite"
+adb pull /data/data/com.app.name/databases/
+
+# Use sqlite3 to query
+sqlite3 app.db "SELECT * FROM users;"
+                        </code>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section 7: Troubleshooting -->
+            <div class="section">
+                <h2>🔧 TROUBLESHOOTING COMMON ISSUES</h2>
+                
+                <div class="step">
+                    <div class="step-num">Issue: "adb device not found"</div>
+                    <div style="margin-top: 10px;">
+                        <code>
+# Solution 1: Restart ADB
+adb kill-server
+adb start-server
+
+# Solution 2: Check USB connection
+lsusb
+
+# Solution 3: Enable debug mode on phone again
+# Settings → Developer options → USB debugging (toggle off/on)
+
+# Solution 4: Check device permissions
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+                        </code>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-num">Issue: "Cannot connect to Frida server"</div>
+                    <div style="margin-top: 10px;">
+                        <code>
+# Check if Frida server is running
+adb shell ps | grep frida
+
+# Restart Frida server
+adb shell pkill -f frida-server
+adb shell "/data/local/tmp/frida-server &"
+
+# Verify Frida is accessible
+frida-ps -U
+
+# Try with explicit device
+frida-ps -U -H 127.0.0.1
+                        </code>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-num">Issue: "APK won't install after modification"</div>
+                    <div style="margin-top: 10px;">
+                        <code>
+# Make sure you:
+# 1. Signed the APK
+jarsigner -verify app-final.apk
+
+# 2. Aligned the APK
+zipalign -c -v 4 app-final.apk
+
+# 3. Uninstall old version first
+adb uninstall com.old.app
+
+# 4. Install with -r flag
+adb install -r app-final.apk
+
+# 5. Check for installation errors
+adb logcat | grep "PackageManager"
+                        </code>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-num">Issue: "Frida hook not executing"</div>
+                    <div style="margin-top: 10px;">
+                        <code>
+# Check JavaScript syntax
+node -c your_hook.js
+
+# Test with simple hook
+echo 'console.log("Test")' > test.js
+frida -U -f com.app -l test.js --no-pause
+
+# Add more verbose logging to your hook
+console.log("[*] Hook loaded");
+
+# Ensure classes exist
+# Try Java.use("android.app.Activity") first (always exists)
+                        </code>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="border-top: 3px solid #00ff00; padding-top: 30px; margin-top: 50px;">
+                <h2 style="color: #00ff00;">🎓 You Now Have Everything</h2>
+                
+                <p style="margin: 20px 0; line-height: 2;">
+                    <span class="success">✓ Complete Kali + Android lab setup</span><br>
+                    <span class="success">✓ Frida runtime hooking expertise</span><br>
+                    <span class="success">✓ APK extraction and modification skills</span><br>
+                    <span class="success">✓ Professional testing workflows</span><br>
+                    <span class="success">✓ Automated scripts for common tasks</span><br>
+                    <span class="success">✓ Advanced security testing techniques</span>
+                </p>
+                
+                <h3 style="color: #00ff00; margin-top: 30px;">Next Steps:</h3>
+                <ol style="margin-left: 20px; line-height: 2;">
+                    <li>Set up your Kali + Android lab TODAY</li>
+                    <li>Install Frida server on your phone</li>
+                    <li>Run your first Frida hook</li>
+                    <li>Extract and modify an APK</li>
+                    <li>Complete all 4 lab exercises</li>
+                    <li>Build your own security testing tools</li>
+                </ol>
+                
+                <p style="margin-top: 30px; color: #00ccff; font-size: 1.1em;">
+                    <strong>This is how professional penetration testers work with Android.</strong>
+                </p>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <h3>🔥 KALI + ANDROID LAB COMPLETE 🔥</h3>
+            <p>Professional Android Security Testing Masterclass</p>
+            <p style="margin-top: 15px;">
+                Welcome to the world of professional mobile penetration testing
+            </p>
+        </div>
+    </div>
+</body>
+</html>
